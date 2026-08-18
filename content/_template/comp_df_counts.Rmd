@@ -1,4 +1,0 @@
-```{r, df_counts, echo = FALSE, message = FALSE, warning = FALSE}
-count_tab <- create_nrt_cora_df_count_tab({{df_nrt}}, {{df_cora}})
-kbl_table(count_tab) %>% kable_styling(font_size = 12)
-```

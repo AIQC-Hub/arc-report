@@ -18,21 +18,6 @@ navbar:
           href: ar_gl_summary.html
         - text: "Summary (CORA)"
           href: ar_cora_summary.html
-    - text: "Pressure"
-      menu:
-        - text: "Pres (AR)"
-          href: ar_pres.html
-        - text: "Pres (GL)"
-          href: ar_gl_pres.html
-        - text: "Pres (CORA)"
-          href: ar_cora_pres.html
-        - text: "---"
-        - text: "Pres QC (AR)"
-          href: ar_pres_qc.html
-        - text: "Pres QC (GL)"
-          href: ar_gl_pres_qc.html
-        - text: "Pres QC (CORA)"
-          href: ar_cora_pres_qc.html
     - text: "Temperature"
       menu:
         - text: "Temp (AR)"
@@ -63,11 +48,5 @@ navbar:
           href: ar_gl_psal_qc.html
         - text: "Psal QC (CORA)"
           href: ar_cora_psal_qc.html
-    - text: "NRT vs CORA"
-      menu:
-        - text: "NRT (AR) vs CORA"
-          href: ar_nrt_ar_vs_cora.html
-        - text: "NRT (GL) vs CORA"
-          href: ar_nrt_gl_vs_cora.html
 
 output: distill::distill_article
