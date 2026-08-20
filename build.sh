@@ -28,19 +28,44 @@ if [ -z "$quarto_bin" ]; then
   exit 1
 fi
 
-# There is more than one R on this machine, and reportlib is only installed for
-# some of them. Without this check a mismatch surfaces as a knitr backtrace on
-# the first page rather than as the missing dependency it is.
+# There is more than one R on this machine, and the packages are only installed
+# for some of them. Without this check a mismatch surfaces as a knitr backtrace
+# on the first page rather than as the missing dependency it is.
+#
+# The list comes from this repo's DESCRIPTION, so there is nothing to keep in
+# step by hand. It has to be library() and not requireNamespace(): a Depends is
+# only required to ATTACH a package, so loading reportlib's namespace succeeds
+# with `maps` absent and the build then dies inside a plot. Measured, both ways.
 rscript_bin="$(command -v Rscript || true)"
 if [ -n "$rscript_bin" ]; then
-  if ! "$rscript_bin" -e 'quit(status = !requireNamespace("reportlib", quietly = TRUE))' >/dev/null 2>&1; then
+  missing="$("$rscript_bin" --vanilla -e '
+    d <- read.dcf("DESCRIPTION")
+    f <- function(n) {
+      if (!n %in% colnames(d)) return(character())
+      v <- sub("\\s*\\(.*\\)$", "", trimws(strsplit(d[1, n], ",")[[1]]))
+      v[nzchar(v)]
+    }
+    for (p in setdiff(c(f("Depends"), f("Imports")), "R")) {
+      e <- tryCatch({ library(p, character.only = TRUE); NULL },
+                    error = conditionMessage)
+      # Print the reason, not just the name: the package that fails is
+      # reportlib, but the one you have to install is the one it names.
+      if (!is.null(e)) cat("  ", p, ": ", e, "\n", sep = "")
+    }
+  ' 2>/dev/null)"
+  if [ -n "$missing" ]; then
     {
-      echo "reportlib is not installed for the R that Quarto will use."
+      echo "R packages missing for the R that Quarto will use:"
+      echo "$missing"
       echo "  Rscript: $rscript_bin ($("$rscript_bin" --version 2>&1 | head -1))"
       echo "  library: $("$rscript_bin" -e 'cat(.libPaths()[1])' 2>/dev/null)"
       echo
-      echo "Install it there:"
-      echo "  remotes::install_github(\"AIQC-Hub/reportlib@v0.1.1\")"
+      echo "Install them there:"
+      echo "  install.packages(c(\"rmarkdown\", \"yaml\"))"
+      echo "  remotes::install_github(\"AIQC-Hub/reportlib@v0.1.2\")"
+      echo
+      echo "install_github resolves reportlib's own dependencies; R CMD INSTALL"
+      echo "does not -- from a checkout run tools/install-deps.R first."
     } >&2
     exit 1
   fi

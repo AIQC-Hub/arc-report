@@ -133,14 +133,35 @@ quarto preview content                             # live preview
 with *"No site generator found"*. Moving `_quarto.yml` to the repo root is not the fix either —
 Quarto lays output out relative to the project root, so pages would land in `content/docs/content/`.
 
-`build.sh` also checks that `reportlib` is installed for whichever `Rscript` is first on `PATH`.
-This machine has two R installations — `/usr/local/bin/Rscript` (4.4.1, has everything) and
-`/usr/bin/Rscript` (4.6.0, does not) — and without the check a mismatch surfaces as a knitr
-backtrace on the first page instead of as the missing dependency it is.
+### Dependencies
+
+This repo declares three: `reportlib`, `rmarkdown`, `yaml` (`DESCRIPTION`). Everything else —
+arrow, tidyverse, data.table, DT, kableExtra, `maps`, `hexbin` and the rest, 19 direct and ~156
+transitively — belongs to `reportlib` and is declared there. There is no second list here to keep
+in step.
+
+```r
+install.packages(c("rmarkdown", "yaml"))
+remotes::install_github("AIQC-Hub/reportlib@v0.1.2")   # resolves reportlib's own deps
+```
+
+`R CMD INSTALL` from a checkout does **not** resolve dependencies — it stops at the first missing
+one (`dependency 'maps' is not available for package 'reportlib'`) and rolls the install back. Run
+`Rscript tools/install-deps.R` in the reportlib checkout first.
+
+`build.sh` preflights the list, reading it from `DESCRIPTION` and attaching each package. It has
+to attach rather than load: a `Depends` is only needed to attach, so `requireNamespace("reportlib")`
+succeeds with `maps` absent and the build then dies inside a plot. Attaching reports the real
+cause — *package 'maps' required by 'reportlib' could not be found*.
+
+The check exists because this machine has two R installations — `/usr/local/bin/Rscript` (4.4.1)
+and `/usr/bin/Rscript` (4.6.0) — with separate libraries. Installing "for R" is not a thing; every
+install targets one library, so the preflight prints which `Rscript` and which library it checked.
 
 CI (`.github/workflows/build-and-deploy.yml`) runs on push to `main`: downloads parquet from
 GitHub release `v0.1.0` into `./data`, sets up Quarto, renders, publishes `content/docs` to Pages.
-R dependencies are listed in **both** `DESCRIPTION` and the workflow — update both together.
+`setup-r-dependencies` reads `DESCRIPTION`, so the workflow's `packages:` block only pins the
+reportlib tag and does not restate the list.
 
 ⚠️ **The release assets are stale.** They still hold the retired R-built summaries; the site now
 expects what `scripts/build_summaries.R` produces (15 files, 150 MB). CI will build green but
