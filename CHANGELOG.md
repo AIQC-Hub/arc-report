@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   and `--check` compares against the committed baseline in `tests/fingerprints/`.
 
 ### Changed
+- The shared functions and templates moved to the new **`aiqcreport`** package. This repo now
+  holds only its pages, `_func/common_site.Rmd`, three `_func/common_ar*.Rmd` region files and
+  `_quarto.yml`; `_template/` and the five shared `_func/` files are gone. Templates are named at
+  the call site — `template_path("var_summary_stats.Rmd")` — instead of through the `t_*` registry.
 - The site is now built with **Quarto** instead of Distill. Pages are `.qmd`, `_site.yml` became
   `content/_quarto.yml`, and xaringanExtra panelsets became Quarto `::: {.panel-tabset}`.
   Verified against the pre-port build: every rendered value, figure, table and DataTable payload

@@ -8,9 +8,9 @@
 # extraction. Any drift means a page started reading different data -- the failure
 # mode that is hardest to spot by eye in rendered HTML.
 #
-# It deliberately loads the *real* `_func/*.Rmd` sources via knitr::purl() instead of
-# reimplementing the filter chain. A reimplementation would drift silently and end up
-# validating itself rather than the site.
+# It deliberately uses the *real* code: the aiqcreport package for the filter chain,
+# and the site's own `_func/*.Rmd` for the region constants, loaded via knitr::purl().
+# A reimplementation would drift silently and end up validating itself.
 #
 # Usage:
 #   Rscript scripts/dump_frames.R                 # writes tests/fingerprints/
@@ -18,6 +18,7 @@
 #   ARC_DATA_DIR=/path/to/parquet Rscript scripts/dump_frames.R
 #
 suppressPackageStartupMessages({
+  library(aiqcreport)
   library(arrow)
   library(dplyr)
   library(digest)
@@ -88,26 +89,27 @@ fingerprint <- function(df) {
 
 collect <- function(id, spec) {
   env <- new.env(parent = globalenv())
-  # common.Rmd probes upwards for the data directory relative to its working
-  # directory; this script runs from the repo root, so name it outright.
+  # aiqc_data_dir() probes relative to the working directory; this script runs
+  # from the repo root, so name the directory outright.
   Sys.setenv(ARC_DATA_DIR = data_dir)
-  source_rmd("common.Rmd", env)
-  source_rmd(spec$common, env)   # defines the constants and loads the base frame
+  source_rmd("common_site.Rmd", env)   # release_url, rsc_dir
+  source_rmd(spec$common, env)         # region constants; loads the base frame
 
   out <- list()
   df  <- get(env$df_name, envir = env)
   out[[env$df_name]] <- fingerprint(df)
 
-  # The standard chain, as _template/location_filtering.Rmd applies it.
+  # The standard chain, as the location_filtering.Rmd template applies it.
+  # filer_locations()/exclude_locations() are the region wrappers from common_ar*.Rmd.
   filtered <- df |>
-    env$filter_profile_level_qc() |>
+    filter_profile_level_qc() |>
     env$filer_locations() |>
     env$exclude_locations()
   out[[env$df_filtered_name]] <- fingerprint(filtered)
 
   for (var in spec$vars) {
     for (qc in c("qc1", "qc4")) {
-      # Same gsub() as _template/load_qc_summary.Rmd, kept verbatim so the harness
+      # Same gsub() as the load_qc_summary.Rmd template, kept verbatim so the harness
       # reproduces production's filename construction rather than a tidied version.
       stem <- get(paste0("parquet_", qc), envir = env)
       f    <- file.path(data_dir, gsub(".parquet", paste0("_", var, ".parquet"), stem))
@@ -116,7 +118,7 @@ collect <- function(id, spec) {
       base <- paste0(env$df_name, "_", qc, "_", var)
       out[[base]] <- fingerprint(qdf)
       out[[paste0(base, "_filtered")]] <- fingerprint(
-        qdf |> env$filter_profile_level_qc() |> env$filer_locations() |> env$exclude_locations()
+        qdf |> filter_profile_level_qc() |> env$filer_locations() |> env$exclude_locations()
       )
     }
   }

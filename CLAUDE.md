@@ -2,8 +2,13 @@
 
 **Quarto** website publishing CTD (temperature, salinity, pressure) data-summary reports for the
 **Arctic Ocean** in situ observations. Built to GitHub Pages at
-<https://aiqc-hub.github.io/arc-report/>. Pages are `.qmd` on the knitr engine; the `_func/` and
-`_template/` children are still `.Rmd`, since Quarto never scans them — they are read by path.
+<https://aiqc-hub.github.io/arc-report/>. Pages are `.qmd` on the knitr engine.
+
+**The shared machinery lives in the [`aiqcreport`](https://github.com/AIQC-Hub/aiqcreport)
+package**, not here — every function and every `{{placeholder}}` template is packaged and shared
+with `bal-report` / `med-report`. This repo keeps only what is genuinely local: its pages, its
+region constants in `_func/common_*.Rmd`, and `_quarto.yml`. Fix shared behaviour in the package,
+not by re-adding a `_func/` file.
 
 Three datasets, each rendered as its own set of pages:
 
@@ -20,16 +25,19 @@ content/            # Quarto project root
   _quarto.yml       # project type, navbar, output-dir: docs, shared html format
   index.qmd         # landing page
   ar[_gl|_cora]_{summary,temp,psal,temp_qc,psal_qc}.qmd     # 15 pages + index
-  _func/            # sourced as knitr children: shared setup + R functions
-  _template/        # knit_expand templates ({{param}} placeholders)
+  _func/            # knitr children, all local:
+    common_site.Rmd   #   repo constants: release_url, rsc_dir
+    common_ar.Rmd     #   per-dataset constants; loads the parquet into df_*
+    common_ar_gl.Rmd
+    common_ar_cora.Rmd
   docs/             # BUILD OUTPUT — generated, git-ignored, do not hand-edit
 data -> /scratch/data/aiqc/merged   # symlink; parquet inputs (git-ignored)
 scripts/            # build_summaries.R (data), dump_frames.R (fingerprints)
 tests/fingerprints/ # committed baseline; tests/baseline-docs/ is git-ignored
 ```
 
-`_func` and `_template` are underscore-prefixed, so Quarto's project scan ignores them — which is
-what we want, they are children rather than pages.
+`_func` is underscore-prefixed, so Quarto's project scan ignores it — which is what we want, those
+are children rather than pages.
 
 ## How a page is built
 
@@ -37,20 +45,22 @@ Every page follows the same three-layer pattern — read one page (e.g. `content
 and the pattern generalises to all of them.
 
 1. **Page `.qmd`** — YAML front matter (title and description only; `format` is shared in
-   `_quarto.yml`), then a chunk setting `r_funcs` (which `_func/` files to
-   load) and page variables (`var`, `var_name`, `var_label`, `qc_var`, …).
+   `_quarto.yml`), then a chunk calling `library(aiqcreport)` and setting `r_funcs` and the page
+   variables (`var`, `var_name`, `var_label`, `qc_var`, …).
 2. **`_func/` children** — pulled in via `child=file.path(r_func_path, r_funcs)`. Order matters:
-   `libraries.Rmd` → `common.Rmd` (paths, template registry `t_*`, shared helpers) →
-   one `common_ar*.Rmd` (dataset constants, loads the parquet into `df_*`) → topic functions
-   (`summary_common.Rmd`, `var.Rmd`, `qc.Rmd`).
-3. **`_template/` fragments** — expanded and knitted per section:
+   `common_site.Rmd` (repo constants) → one `common_ar*.Rmd` (dataset constants, loads the parquet
+   into `df_*`). Everything else comes from the package.
+3. **Packaged templates** — expanded and knitted per section, named directly rather than through a
+   registry:
    ```r
-   src <- knitr::knit_expand(t_v_summary_stats, df = df_filtered_name, var = var)
+   src <- knitr::knit_expand(template_path("var_summary_stats.Rmd"),
+                             df = df_filtered_name, var = var)
    res <- knitr::knit_child(text = src, quiet = TRUE)
    cat(res, sep = '\n')          # chunk needs results = 'asis'
    ```
-   Templates use `{{placeholder}}`; every template path is registered as a `t_*` variable in
-   `_func/common.Rmd`. Data frames are passed **by name (string)**, not by value.
+   Templates use `{{placeholder}}`, resolved by `knit_expand` **in the page's environment** — which
+   is why `common_site.Rmd` must define `rsc_dir2` and the region file `parquet_qc1` etc. Data
+   frames are passed **by name (string)**, not by value.
 
 **Working directory (measured, not assumed).** Under Quarto all three contexts share the same
 working directory, `content/`:
@@ -59,13 +69,14 @@ working directory, `content/`:
 |---------------|---------------------------|------------------------|
 | a page `.qmd` | `content/` | `content/` |
 | `_func/*.Rmd` (loaded via `child=`) | `content/` | `content/_func/` |
-| `_template/*.Rmd` (via `knit_expand` + `knit_child(text=)`) | `content/` | `content/` |
+| a packaged template (via `knit_expand` + `knit_child(text=)`) | `content/` | `content/` |
 
 The middle row changed with the port: rmarkdown gave a `child=` document its own directory,
-Quarto does not. `_func/common.Rmd` therefore resolves the data directory **once to an absolute
-path**, by probing `../data` then `../../data` for a directory containing parquet files, and
-`rsc_dir2` is now just an alias of `rsc_dir`. Both names are kept because the templates refer to
-`rsc_dir2`. Do not replace either with a bare relative path — that is what broke on the port.
+Quarto does not. The package's `aiqc_data_dir()` therefore resolves the data directory **once to an
+absolute path**, probing `../data` then `../../data` for a directory containing parquet files
+(`ARC_DATA_DIR` overrides). `_func/common_site.Rmd` assigns it to both `rsc_dir` and `rsc_dir2`;
+both names are kept because the templates refer to `rsc_dir2`. Do not replace either with a bare
+relative path — that is what broke on the Quarto port.
 
 Other conventions: pages end with `rm(list = ls())`; tabbed sections use Quarto tabsets
 (`::: {.panel-tabset}` with one heading per tab); chunk labels must be unique per page.
@@ -133,7 +144,7 @@ publish the old numbers until a new release is cut from the new summaries.
 ## In-flight migration
 
 Five phases: remove 8 pages ✅ → switch to seastamp inputs ✅ → Distill-to-Quarto ✅ → extract the
-shared `aiqcreport` package → roll out to `bal-report` / `med-report`.
+shared `aiqcreport` package ✅ → roll out to `bal-report` / `med-report`.
 
 **Parquet stays.** A parquet-to-SQLite move was planned and then reversed: SQLite came out ~8x
 larger (656 MB → 5.2 GB on `nrt_ar_ar`), past GitHub's 2 GiB release-asset cap. Do not
@@ -146,10 +157,11 @@ mapping, phase ordering and verification steps. Read it before touching `_func/`
 Standing constraints while it is in progress:
 
 - One phase at a time — output comparison is the verification, so only one variable may change.
-- Keep region-specific values confined to `_func/common_*.Rmd` and out of templates; the sibling
-  repos' machinery is byte-identical to this one and must stay portable.
-- `_template/summary_location_filtering.Rmd` and `summary_location_filtering3.Rmd` look dead here
-  but are used by `bal-report` and `med-report` respectively — do not delete them.
+- Keep region-specific values confined to `_func/common_*.Rmd` and out of the package; the sibling
+  repos share the package and it must stay portable.
+- In the package, `summary_location_filtering.Rmd` / `summary_location_filtering3.Rmd` and the
+  duplicate-detection functions look dead — they serve `bal-report` and `med-report`. Do not delete
+  them before those sites are converted.
 
 ## Companion docs
 

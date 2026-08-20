@@ -1,9 +1,0 @@
-```{r, t_load_qc_summary, echo = FALSE, message = FALSE, warning = FALSE}
-# Data frames
-df_qc1_file_name <- file.path(normalizePath("{{rsc_dir2}}"), gsub(".parquet", "_{{var}}.parquet", "{{parquet_qc1}}"))
-df_qc4_file_name <- file.path(normalizePath("{{rsc_dir2}}"), gsub(".parquet", "_{{var}}.parquet", "{{parquet_qc4}}"))
-
-{{df_qc1_name}} <- read_parquet(df_qc1_file_name)
-{{df_qc4_name}} <- read_parquet(df_qc4_file_name)
-
-```

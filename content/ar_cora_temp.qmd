@@ -8,8 +8,9 @@ description: |
 knitr::opts_chunk$set(echo=FALSE)
 
 # Common functions
+library(aiqcreport)
 r_func_path <- "./_func"
-r_funcs <- c("libraries.Rmd", "common.Rmd", "common_ar_cora.Rmd", "var.Rmd")
+r_funcs <- c("common_site.Rmd", "common_ar_cora.Rmd")
 
 # Variables
 var <- "temp"
@@ -21,17 +22,17 @@ var_label <- "Temp"
 ```
 
 ```{r, load_qc_summary, include = FALSE}
-src <- knitr::knit_expand(t_load_qc_summary)
+src <- knitr::knit_expand(template_path("load_qc_summary.Rmd"))
 res <- knitr::knit_child(text = src, quiet = TRUE)
 ```
 
 ```{r, location_filtering, include = FALSE}
-src <- knitr::knit_expand(t_location_filtering, df=df_name, df_filtered=df_filtered_name)
+src <- knitr::knit_expand(template_path("location_filtering.Rmd"), df=df_name, df_filtered=df_filtered_name)
 res <- knitr::knit_child(text = src, quiet = TRUE)
 ```
 
 ```{r, location_filtering_qc, include = FALSE}
-src <- knitr::knit_expand(t_location_filtering_qc,
+src <- knitr::knit_expand(template_path("location_filtering_qc.Rmd"),
                           f_qc1=df_qc1_name, df_qc1_filtered=df_qc1_filtered_name,
                           df_qc4=df_qc4_name, df_qc4_filtered=df_qc4_filtered_name)
 res <- knitr::knit_child(text = src, quiet = TRUE)
@@ -39,7 +40,7 @@ res <- knitr::knit_child(text = src, quiet = TRUE)
 
 ## 1. Basic Information
 ```{r, basic_info, results = 'asis'}
-src <- knitr::knit_expand(t_v_basic_info)
+src <- knitr::knit_expand(template_path("var_basic_info.Rmd"))
 res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
 ```
@@ -48,7 +49,7 @@ cat(res, sep = '\n')
 
 ## 2. Summary Statistics
 ```{r, summary_stats, results = 'asis'}
-src <- knitr::knit_expand(t_v_summary_stats, df=df_filtered_name,
+src <- knitr::knit_expand(template_path("var_summary_stats.Rmd"), df=df_filtered_name,
                           df_qc1=df_qc1_filtered_name, df_qc4=df_qc4_filtered_name)
 res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
@@ -58,7 +59,7 @@ cat(res, sep = '\n')
 
 ## 3. Distributions By Year
 ```{r, distributions_year, results = 'asis'}
-src <- knitr::knit_expand(t_v_distributions_year)
+src <- knitr::knit_expand(template_path("var_distribution_year.Rmd"))
 res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
 ```
@@ -67,7 +68,7 @@ cat(res, sep = '\n')
 
 ## 4. Distributions By Month
 ```{r, distributions_month, results = 'asis'}
-src <- knitr::knit_expand(t_v_distributions_month)
+src <- knitr::knit_expand(template_path("var_distribution_month.Rmd"))
 res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
 ```

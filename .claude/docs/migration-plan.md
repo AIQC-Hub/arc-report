@@ -294,7 +294,36 @@ navbar has its 3 menus, and every internal link resolves.
 
 ---
 
-## Phase 4 — Extract `aiqcreport`
+## Phase 4 — Extract `aiqcreport` ✅
+
+*Done. The package lives at `/scratch/workspace/aiqcreport` (not yet pushed). arc-report keeps
+only its pages, `_func/common_site.Rmd`, three `_func/common_ar*.Rmd` region files and
+`_quarto.yml`; 23 shared files moved out.*
+
+What moved, and what deliberately did not:
+
+- **Dropped as dead in all three repos:** `get_unique_profile_no`,
+  `remove_duplicates_within_platforms`, `create_var_density`. Verified by call-site count across
+  arc/bal/med before deleting.
+- **Kept although unused here:** the duplicate-detection functions,
+  `netcdf_time_location_qc_summary`, `create_time_location_qc_summary_tab`,
+  `exclude_locations_common`, and the two `summary_location_filtering*` templates — all still
+  called by bal-report and med-report. They retire at Phase 5.
+- **`t_*` registry → `template_path("var_summary_stats.Rmd")`.** Named at the call site rather
+  than through a registry of 18 variables, so each page says which template it uses.
+- **`rsc_dir` → `aiqc_data_dir()`.** `_func/common_site.Rmd` assigns it to `rsc_dir`/`rsc_dir2`,
+  which the templates still reference by name through `knit_expand`.
+- **`libraries.Rmd` → `Depends:`.** Template code is evaluated in the *page's* environment, so the
+  plotting and table packages must be attached, not merely imported. `Depends` is the honest way
+  to say that; `Imports` would leave `ggplot()` unresolved in a template.
+
+Templates keep their `.Rmd` extension rather than becoming `.qmd` — they are knitr fragments read
+by `knit_expand`, never rendered by Quarto, and keeping the names identical makes this phase a
+provable no-op.
+
+⚠️ **The package is local only.** `DESCRIPTION` and the workflow already point at
+`github::AIQC-Hub/aiqcreport@v0.1.0`; CI cannot install it until that repo is pushed and tagged.
+
 
 New repo. Only after Phases 1-3 are green in `arc-report`.
 
@@ -307,8 +336,9 @@ aiqcreport/
   R/templates.R     template_path("var_summary_stats.qmd") accessor
 ```
 
-- `_func/{common,summary_common,var,qc}.Rmd` become package R files. The knitr-child mechanism
-  disappears for these; pages call `library(aiqcreport)`.
+- `_func/{common,summary_common,var,qc}.Rmd` become package R files, split by topic
+  (`filters.R`, `tables.R`, `summary.R`, `var.R`, `qc.R`, `duplicates.R`, `paths.R`). The
+  knitr-child mechanism disappears for these; pages call `library(aiqcreport)`.
 - The `t_*` registry in `common.Rmd` becomes `template_path()` over `inst/templates/`, so pages
   stop hard-coding `./_template` and the paths keep working from any working directory.
 - What stays in each site repo: `content/_func/common_<region>*.qmd` (region constants only),

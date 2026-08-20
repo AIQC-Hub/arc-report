@@ -62,19 +62,7 @@ jobs:
         with:
           packages:
             any::rmarkdown
-            any::fontawesome
-            any::kableExtra
-            any::DT
-            any::htmltools
-            any::arrow
-            any::data.table
-            any::tidyverse
-            any::rlang
-            any::ggpubr
-            any::cowplot
-            any::scales
-            any::maps
-            any::hexbin
+            github::AIQC-Hub/aiqcreport@v0.1.0
 
       # 6. Set up Quarto
       - name: Setup Quarto

@@ -6,21 +6,22 @@ description: |
 
 ```{r include = FALSE}
 knitr::opts_chunk$set(echo=FALSE)
+library(aiqcreport)
 r_func_path <- "./_func"
-r_funcs <- c("libraries.Rmd", "common.Rmd", "common_ar_cora.Rmd", "summary_common.Rmd")
+r_funcs <- c("common_site.Rmd", "common_ar_cora.Rmd")
 ```
 
 ```{r, import, child=file.path(r_func_path, r_funcs)}
 ```
 
 ```{r, location_filtering1, include = FALSE}
-src <- knitr::knit_expand(t_location_filtering, df=df_name, df_filtered=df_filtered_name)
+src <- knitr::knit_expand(template_path("location_filtering.Rmd"), df=df_name, df_filtered=df_filtered_name)
 res <- knitr::knit_child(text = src, quiet = TRUE)
 ```
 
 ## 1. Basic Information
 ```{r, basic_info, results = 'asis'}
-res <- knitr::knit_expand(t_s_basic_info)
+res <- knitr::knit_expand(template_path("summary_basic_info.Rmd"))
 cat(res, sep = '\n')
 ```
 
@@ -28,7 +29,7 @@ cat(res, sep = '\n')
 
 ## 2. Descriptive Statistics of `r region_code1` CTD Data
 ```{r, descriptive_stats, results = 'asis'}
-src <- knitr::knit_expand(t_s_descriptive_stats, df=df_filtered_name)
+src <- knitr::knit_expand(template_path("summary_descriptive_stats.Rmd"), df=df_filtered_name)
 res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
 ```
@@ -37,7 +38,7 @@ cat(res, sep = '\n')
 
 ## 3. Locations
 ```{r, locations, results = 'asis'}
-src <- knitr::knit_expand(t_s_locations, plot_nrow=4, plot_height=20)
+src <- knitr::knit_expand(template_path("summary_locations.Rmd"), plot_nrow=4, plot_height=20)
 res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
 ```
@@ -46,7 +47,7 @@ cat(res, sep = '\n')
 
 ## 4. Distribution of Profiles Over Time
 ```{r, distribution_time, results = 'asis'}
-src <- knitr::knit_expand(t_s_distribution_time, plot_nrow=4, plot_height=20)
+src <- knitr::knit_expand(template_path("summary_distribution_time.Rmd"), plot_nrow=4, plot_height=20)
 res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
 ```
@@ -55,7 +56,7 @@ cat(res, sep = '\n')
 
 ## 5. Observation Counts By Profile
 ```{r, observation_counts, results = 'asis'}
-src <- knitr::knit_expand(t_s_observation_counts, plot_nrow=4, plot_height=20)
+src <- knitr::knit_expand(template_path("summary_observation_counts.Rmd"), plot_nrow=4, plot_height=20)
 res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
 ```

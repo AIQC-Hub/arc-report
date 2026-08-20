@@ -8,8 +8,9 @@ description: |
 knitr::opts_chunk$set(echo=FALSE)
 
 # Common functions
+library(aiqcreport)
 r_func_path <- "./_func"
-r_funcs <- c("libraries.Rmd", "common.Rmd", "common_ar.Rmd", "qc.Rmd")
+r_funcs <- c("common_site.Rmd", "common_ar.Rmd")
 
 # Variables
 var <- "psal"
@@ -21,13 +22,13 @@ qc_var_name <- "Practical salinity QC flag"
 ```
 
 ```{r, location_filtering, include = FALSE}
-src <- knitr::knit_expand(t_location_filtering, df=df_name, df_filtered=df_filtered_name)
+src <- knitr::knit_expand(template_path("location_filtering.Rmd"), df=df_name, df_filtered=df_filtered_name)
 res <- knitr::knit_child(text = src, quiet = TRUE)
 ```
 
 ## 1. Basic Information
 ```{r, basic_info, results = 'asis'}
-res <- knitr::knit_expand(t_qc_basic_info)
+res <- knitr::knit_expand(template_path("qc_basic_info.Rmd"))
 cat(res, sep = '\n')
 ```
 
@@ -35,7 +36,7 @@ cat(res, sep = '\n')
 
 ## 2. Summary Statistics
 ```{r, summary_stats, results = 'asis'}
-src <- knitr::knit_expand(t_qc_summary_stats, df=df_filtered_name)
+src <- knitr::knit_expand(template_path("qc_summary_stats.Rmd"), df=df_filtered_name)
 res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
 ```
@@ -44,7 +45,7 @@ cat(res, sep = '\n')
 
 ## 3. Distributions Over Time
 ```{r, distributions, results = 'asis'}
-src <- knitr::knit_expand(t_qc_distributions, df=df_filtered_name)
+src <- knitr::knit_expand(template_path("qc_distribution.Rmd"), df=df_filtered_name)
 res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
 ```
@@ -53,7 +54,7 @@ cat(res, sep = '\n')
 
 ## 4. Fraction of QC4 Flags per Profile
 ```{r, fraction, results = 'asis'}
-src <- knitr::knit_expand(t_qc_qc4_proportion, df=df_filtered_name)
+src <- knitr::knit_expand(template_path("qc_qc4_proportion.Rmd"), df=df_filtered_name)
 res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
 ```
