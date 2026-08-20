@@ -144,7 +144,7 @@ publish the old numbers until a new release is cut from the new summaries.
 ## In-flight migration
 
 Five phases: remove 8 pages ✅ → switch to seastamp inputs ✅ → Distill-to-Quarto ✅ → extract the
-shared `aiqcreport` package ✅ → roll out to `bal-report` / `med-report`.
+shared `aiqcreport` package ✅ → roll out to `bal-report` / `med-report` ✅.
 
 **Parquet stays.** A parquet-to-SQLite move was planned and then reversed: SQLite came out ~8x
 larger (656 MB → 5.2 GB on `nrt_ar_ar`), past GitHub's 2 GiB release-asset cap. Do not

@@ -351,7 +351,34 @@ produce identical output.
 
 ---
 
-## Phase 5 — Sibling repos
+## Phase 5 — Sibling repos ✅
+
+*Done. bal-report and med-report are on Quarto, on the seastamp data and on the package, each on
+a `feature/QuartoMigration` branch. Nothing is pushed or published — the sites are for manual
+inspection first.*
+
+| | pages | datasets |
+|---|---|---|
+| arc-report | 16 | AR, GL, CORA |
+| bal-report | 11 | BO, CORA |
+| med-report | 16 | MO, GL, CORA |
+
+**bal-report loses GL entirely.** Copernicus does not publish the GL product for the Baltic, and
+there is no `nrt_bo_gl` in the new data, so `bo_gl_*` and `_func/common_bo_gl.Rmd` are gone.
+
+The side effect that bit arc-report did not recur: all six sibling summary pages already passed
+`df_filtered_name` to the descriptive-statistics section, so removing "Profile level QC flags"
+changed nothing downstream. Checked before the edit, not after.
+
+**What the roll-out paid back.** With all three sites converted, the package could shed everything
+that only existed to serve the un-migrated siblings: the four duplicate-detection functions,
+`netcdf_time_location_qc_summary`, `create_time_location_qc_summary_tab`, and both
+`summary_location_filtering*` templates — 38 exports down to 34, 18 templates down to 16.
+`exclude_locations_common` stays; med-report's GL region file calls it twice.
+
+`build_summaries()` and `fingerprint_frames()` also moved into the package rather than being
+copied into two more repos, each site keeping a wrapper that only names its datasets.
+
 
 `bal-report` (BO) and `med-report` (MO) are structurally identical — templates are byte-identical
 today except one trailing newline, and `_func/common.Rmd` differs only in `release_url`. Each repo:
