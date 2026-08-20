@@ -60,9 +60,9 @@ jobs:
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          # reportlib is not published. Until it is installable from somewhere
-          # this job cannot resolve it, which is deliberate: the sites are not
-          # being deployed yet. Point this at wherever reportlib ends up living.
+          # reportlib is pinned by tag so a change there cannot silently alter
+          # three published sites. The tag must exist on the repo: an untagged
+          # push leaves this unresolvable.
           packages:
             any::rmarkdown
             github::AIQC-Hub/reportlib@v0.1.0
