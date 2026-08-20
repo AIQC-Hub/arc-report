@@ -15,32 +15,39 @@ only the renderer and the code layout do.
 | D2 | Storage format | **Parquet, unchanged.** SQLite reversed on measured size (D4) |
 | D3 | Pages to drop | **Pressure pages** (6) and **NRT vs CORA pages** (2) |
 | D4 | parquet → SQLite | **Reversed 2026-08-20.** ~8x size blow-up; 5.2 GB exceeds GitHub's 2 GiB release-asset cap |
+| D5 | Input data | **`ctddump` + `seastamp`** observation-level parquet, aggregated locally by `scripts/build_summaries.R`. The old R-built summaries are retired |
+| D6 | Continuity with the published site | **Not required.** New tooling, new numbers; no reconciliation against the old figures |
 
 ## Scope
 
 Four phases, deliberately sequenced so each is verifiable on its own:
 
 1. Remove 8 pages (§Phase 1) ✅
-2. Distill → Quarto (§Phase 2)
-3. Extract shared machinery into `aiqcreport` (§Phase 3)
-4. Roll out to `bal-report` / `med-report` (§Phase 4)
+2. Switch to the seastamp inputs (§Phase 2)
+3. Distill → Quarto (§Phase 3)
+4. Extract shared machinery into `aiqcreport` (§Phase 4)
+5. Roll out to `bal-report` / `med-report` (§Phase 5)
 
-**Ordering rationale.** Removal comes first so nothing dead is ported. The package extraction
-comes *last* so the code is moved exactly once, already Quarto-native, and the sibling repos
-adopt a finished package rather than tracking a moving one.
+**Ordering rationale.** Removal comes first so nothing dead is ported. The data layer moves
+before the renderer, so that change can be verified with the renderer held constant. The package
+extraction comes *last* so the code is moved exactly once, already Quarto-native, and the sibling
+repos adopt a finished package rather than tracking a moving one.
 
-With the data layer frozen, Phase 2 is now the first phase whose output cannot be compared
-byte-for-byte — plan the content-diff harness accordingly (§Phase 0).
+**Phase 2 has no before/after.** The old summaries were built by ad-hoc R from data that no longer
+exists locally, and the new tooling produces genuinely different numbers — that was accepted, not
+a regression to chase. So the Phase 0 baseline is captured *after* Phase 2 lands, and it is
+Phase 3 onward that must not move it.
 
 Never run two phases at once: output comparison is the verification, and it only works if one
 variable changes at a time.
 
 ---
 
-## Phase 0 — Baseline (not yet done)
+## Phase 0 — Baseline
 
-*Still outstanding, and now the immediate next task: Phase 2 is the first phase that changes
-rendered output, so the baseline must be captured before it starts.*
+*The harness (`scripts/dump_frames.R`) exists. The baseline itself is captured once Phase 2
+lands, because the seastamp switch deliberately changes the numbers and there is nothing to
+carry over from the old data.*
 
 Capture a reference build to diff against.
 
@@ -49,9 +56,11 @@ Rscript -e 'rmarkdown::render_site(input = "content", encoding = "UTF-8")'
 cp -r content/docs /tmp/baseline-docs
 ```
 
-Also write `scripts/dump_frames.R`: for each dataset, load the parquet frames exactly as the
-pages do, apply the standard filter chain, and dump a fingerprint (row count, column names,
-`digest::digest()` of the sorted frame) to `tests/fingerprints/*.json`. The data layer is frozen,
+`scripts/dump_frames.R` does this: for each dataset it loads the frames exactly as the pages do —
+by `knitr::purl()`-ing and sourcing the real `_func/*.Rmd`, so it cannot drift from what the site
+does — applies the standard filter chain, and writes per-column digests plus the headline figures
+to `tests/fingerprints/*.json`. Per-column digests mean a diff names the column that moved.
+`--check` compares instead of writing. The data layer is frozen,
 so these fingerprints must stay identical through every remaining phase — any drift means a page
 started reading different data, which is the failure mode hardest to spot by eye.
 
@@ -162,7 +171,75 @@ cast, the absolute-`normalizePath` DB path, `scripts/build_db.R` — is moot and
 
 ---
 
-## Phase 2 — Distill → Quarto
+## Phase 2 — Switch to the seastamp inputs
+
+The old summaries were produced by ad-hoc R from CMEMS downloads and shipped as release
+assets. They are retired. `ctddump` + `seastamp` now write observation-level parquet, and
+`scripts/build_summaries.R` aggregates that into the profile-level summaries the pages read.
+
+### The two layers
+
+| | seastamp source | site input |
+|---|---|---|
+| path | `/scratch/data/aiqc/seastamp/stamped/depth/<src>.parquet` | `<data>/netcdf_<out>_2_summary*.parquet` |
+| grain | one row per observation | one row per platform × profile |
+| size | 247M rows over the three Arctic datasets | ~1.5M rows |
+| columns | 25 | 68 base / 15 per QC subset |
+
+Name mapping, chosen so `_func/common_ar*.Rmd` needs no edit:
+`nrt_ar_ar` → `netcdf_nrt_ar_2_summary`, `nrt_ar_gl` → `netcdf_nrt_ar_gl_2_summary`,
+`cora_ar` → `netcdf_cora_ar_2_summary`.
+
+### What the builder has to reconcile
+
+Four differences between the layers, each of which fails silently if missed:
+
+- **QC flags are strings** (`"1"`, `"4"`, `""`) where the filter chain compares numerically.
+  `filter_profile_level_qc()` does `time_qc == 1 & position_qc %in% c(1, -128)`; against `"1"`
+  that matches nothing and every page renders empty. Cast on the way in.
+- **A blank flag means a missing value.** Verified 1:1 on `nrt_ar_ar` — 14,361 blank `temp_qc`,
+  14,361 NA temperatures, the same rows. Counted as flag **9** ("Missing value") via the
+  `BLANK_FLAG` constant; flip it to `0` ("No QC was performed") if that reading is preferred.
+- **`profile_longitude` / `profile_latitude` are entirely null.** Position must come from the
+  observation-level `longitude` / `latitude`. Preferring the profile columns yields `NaN`
+  coordinates, which `filer_locations()` then drops — an empty map and no error.
+- **The `-128` `position_qc` sentinel is gone**, and `time_qc` / `position_qc` are uniformly `1`.
+  The profile-level QC filter is currently a no-op; keep it anyway, since that is a property of
+  today's data and not a guarantee.
+
+`is_dup` is `FALSE` throughout — deduplication now happens upstream, which is consistent with the
+duplicate-profile sections removed in Phase 1.
+
+**The whole filter chain is now a no-op.** Every `df_*_filtered` frame fingerprints identically to
+its unfiltered source: `time_qc`/`position_qc` are uniformly 1, the coordinates already sit inside
+each region's box, and `exclude_locations()` was always identity here. Under the old data it
+removed a great deal — GL fell from 742,809 profiles to 207,372. seastamp evidently applies that
+filtering upstream. Keep the chain: it is cheap, it is what the sibling repos still rely on, and
+its being redundant is a property of today's data rather than a guarantee.
+
+### Memory
+
+Aggregating 118M rows (CORA) in one pass needs well over 10 GB. The builder bins platforms into
+chunks of ~15M rows (`CHUNK_ROWS`) and aggregates each with `data.table`; a profile never spans
+platforms, so any partition by platform is a valid partition of the groups. Exact medians are the
+reason this is not pushed into arrow, whose grouped `median()` is approximate.
+
+### Verification
+
+Internal consistency, since there is no before/after to diff:
+
+- per-variable flag counts sum to `{var}_count`
+- `{var}_na_count + {var}_non_na_count == {var}_count`
+- `min <= mean <= max`
+- the QC subsets reconcile against the base flag counts: `sum(qc1$temp_count) == sum(base$temp_qc_1)`
+- coordinates land inside the region box
+
+**Done when:** all three datasets build, the checks above pass, the site renders, and
+`dump_frames.R` has written the Phase 0 baseline over the new data.
+
+---
+
+## Phase 3 — Distill → Quarto
 
 | Distill | Quarto |
 |---------|--------|
@@ -191,16 +268,16 @@ Notes:
 
 **Verification:** HTML will *not* be byte-identical — different framework, different CSS. Compare
 content instead: for each page, extract table row counts, figure counts, and the rendered numeric
-summaries, and diff those against the Phase 1 build. Then read the pages.
+summaries, and diff those against the Phase 2 build. Then read the pages.
 
 **Done when:** `quarto render content` succeeds, every page's tabs work, TOC is correct, all
 figures render, navbar and index links resolve.
 
 ---
 
-## Phase 3 — Extract `aiqcreport`
+## Phase 4 — Extract `aiqcreport`
 
-New repo. Only after Phases 1-2 are green in `arc-report`.
+New repo. Only after Phases 1-3 are green in `arc-report`.
 
 ```
 aiqcreport/
@@ -220,12 +297,12 @@ aiqcreport/
 - Install in CI via `remotes::install_github("AIQC-Hub/aiqcreport@v0.1.0")` — pin the tag so a
   package change cannot silently alter three published sites.
 
-**Verification:** content diff against the Phase 2 build; this is a pure code move and should
+**Verification:** content diff against the Phase 3 build; this is a pure code move and should
 produce identical output.
 
 ---
 
-## Phase 4 — Sibling repos
+## Phase 5 — Sibling repos
 
 `bal-report` (BO) and `med-report` (MO) are structurally identical — templates are byte-identical
 today except one trailing newline, and `_func/common.Rmd` differs only in `release_url`. Each repo:
@@ -243,11 +320,11 @@ are identity); all six sibling summary pages already use `df_filtered_name` and 
 before deleting the section there.
 
 `aiqc-report` is the hub landing site — same Distill→Quarto conversion, but it has no data pages,
-so Phase 3 does not apply.
+so Phase 4 does not apply.
 
 ---
 
-## CI changes (folded into Phases 2-3)
+## CI changes (folded into Phases 2-4)
 
 `.github/workflows/build-and-deploy.yml`:
 

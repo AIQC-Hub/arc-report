@@ -65,15 +65,32 @@ panelsets (`::: {.panelset}` / `::: {.panel}`); chunk labels must be unique per 
 
 ## Data model
 
-Inputs are pre-aggregated **profile-level** parquet summaries (one row per
-platform × profile), not raw observations:
+Two layers. The site reads only the second.
+
+**Source (observation-level).** `ctddump` + `seastamp` write one parquet per region to
+`/scratch/data/aiqc/seastamp/stamped/depth/{nrt_ar_ar,nrt_ar_gl,cora_ar}.parquet` — one row per
+observation (247M rows across the three Arctic datasets), 25 columns: `platform_code`,
+`profile_no`, `observation_no`, `profile_timestamp`, `longitude`, `latitude`, `{pres,temp,psal,deph}`
+and their `_qc` flags, plus `is_dup`, `dist_to_coast`, `bathymetry`. **No page reads these.**
+
+Three traps in this layer, all handled by `scripts/build_summaries.R`:
+`time_qc`/`position_qc`/`{var}_qc` are **strings** (`"1"`, `"4"`, `""`), where the filter chain
+compares numerically; a **blank** flag means a missing value (blank ⟺ NA, verified 1:1) and is
+counted as flag 9; and `profile_longitude`/`profile_latitude` are **entirely null** — position
+comes from the observation-level `longitude`/`latitude`.
+
+**Site input (profile-level).** `scripts/build_summaries.R` aggregates the above into pre-aggregated
+summaries (one row per platform × profile). Idempotent: it skips a dataset whose outputs already
+exist and are newer than the source; `--force` overrides.
 
 - `netcdf_<src>_2_summary.parquet` — all variables. Key columns: `platform_code`, `profile_no`,
   `profile_timestamp`, `time_qc`, `position_qc`, `longitude`, `latitude`,
   `observation_no_*`, and per-variable `{pres,temp,psal}_{count,na_count,non_na_count,mean,median,min,max}`
   plus flag counts `{var}_qc_{0..9,A}`.
-- `netcdf_<src>_2_summary_qc{1,4}_{pres,temp,psal}.parquet` — same rows restricted to
-  good (QC 1) / bad (QC 4) observations; loaded lazily by `_template/load_qc_summary.Rmd`.
+- `netcdf_<src>_2_summary_qc{1,4}_{temp,psal}.parquet` — 15 columns: the identity columns,
+  `observation_no_count` and that variable's seven statistics, computed over only its QC 1 / QC 4
+  observations. Loaded lazily by `_template/load_qc_summary.Rmd`. (No `pres` subsets — the
+  pressure pages are gone.)
 
 Standard filtering chain applied on every page (`_template/location_filtering.Rmd`):
 `filter_profile_level_qc()` (time_qc == 1, position_qc ∈ {1, -128}) → `filer_locations()` →
@@ -83,6 +100,9 @@ Standard filtering chain applied on every page (`_template/location_filtering.Rm
 ## Build & deploy
 
 ```bash
+Rscript scripts/build_summaries.R                  # obs-level -> profile summaries (skips if current)
+Rscript scripts/dump_frames.R                      # fingerprint every frame the pages read
+Rscript scripts/dump_frames.R --check              # ... and compare against the committed baseline
 Rscript -e 'rmarkdown::render_site(input = "content", encoding = "UTF-8")'
 Rscript -e 'rmarkdown::render_site(input = "content", output_format = "distill::distill_article", encoding = "UTF-8")'  # all
 Rscript -e 'rmarkdown::render("content/ar_temp.Rmd")'   # single page while iterating (slow otherwise)

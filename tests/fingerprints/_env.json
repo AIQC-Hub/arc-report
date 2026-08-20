@@ -1,0 +1,8 @@
+{
+  "generated": "2026-08-20T19:36:55+0200",
+  "git_commit": "1f053e98004e8053a06e9f16a022743bf812be71",
+  "R": "4.4.1",
+  "arrow": "23.0.1.2",
+  "dplyr": "1.2.1",
+  "data_dir": "/scratch/data/aiqc/merged"
+}
