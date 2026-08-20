@@ -101,13 +101,16 @@ R dependencies are listed in **both** `DESCRIPTION` and the workflow — update 
 
 ## In-flight migration
 
-Planned work, not yet started — the codebase is still fully Distill + parquet. Five phases:
-remove 8 pages → parquet-to-SQLite → Distill-to-Quarto → extract the shared `aiqcreport`
-package → roll out to `bal-report` / `med-report`.
+Distill → Quarto, in four phases: remove 8 pages (done) → Distill-to-Quarto → extract the
+shared `aiqcreport` package → roll out to `bal-report` / `med-report`.
 
-**See [.claude/docs/migration-plan.md](.claude/docs/migration-plan.md)** for the schema, the
-Distill→Quarto mapping, phase ordering and verification steps. Read it before touching
-`_func/`, `_template/`, `_site.yml`, or the workflow.
+**Parquet stays.** A parquet-to-SQLite move was planned and then reversed: SQLite came out ~8x
+larger (656 MB → 5.2 GB on `nrt_ar_ar`), past GitHub's 2 GiB release-asset cap. Do not
+reintroduce it; if SQL access is wanted, DuckDB queries the parquet files in place.
+
+**See [.claude/docs/migration-plan.md](.claude/docs/migration-plan.md)** for the Distill→Quarto
+mapping, phase ordering and verification steps. Read it before touching `_func/`, `_template/`,
+`_site.yml`, or the workflow.
 
 Standing constraints while it is in progress:
 

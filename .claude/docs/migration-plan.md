@@ -1,41 +1,46 @@
-# Migration Plan: Distill + parquet → Quarto + SQLite
+# Migration Plan: Distill → Quarto
 
-Status: **Phase 1 complete** (uncommitted). Pilot repo is `arc-report`; `bal-report` and
-`med-report` follow.
+Status: **Phase 1 complete** (branch `feature/RemovePages`). Pilot repo is `arc-report`;
+`bal-report` and `med-report` follow.
+
+**Parquet stays.** The move to SQLite was planned, prototyped and then reversed — see
+[§Reversed: parquet → SQLite](#reversed-parquet--sqlite). The data layer does not change;
+only the renderer and the code layout do.
 
 ## Decisions taken
 
 | # | Decision | Choice |
 |---|----------|--------|
 | D1 | Duplicated `_func` / `_template` across region repos | Extract to a shared R package **`aiqcreport`** (new repo), templates in `inst/templates/` |
-| D2 | How the SQLite DB reaches the build | Pre-built offline, uploaded **gzipped as a GitHub release asset**; CI downloads + decompresses |
+| D2 | Storage format | **Parquet, unchanged.** SQLite reversed on measured size (D4) |
 | D3 | Pages to drop | **Pressure pages** (6) and **NRT vs CORA pages** (2) |
+| D4 | parquet → SQLite | **Reversed 2026-08-20.** ~8x size blow-up; 5.2 GB exceeds GitHub's 2 GiB release-asset cap |
 
 ## Scope
 
-Four independent changes, deliberately sequenced so each is verifiable on its own:
+Four phases, deliberately sequenced so each is verifiable on its own:
 
-1. Remove 8 pages (§Phase 1)
-2. parquet → SQLite, still on Distill (§Phase 2)
-3. Distill → Quarto (§Phase 3)
-4. Extract shared machinery into `aiqcreport` (§Phase 4)
-5. Roll out to `bal-report` / `med-report` (§Phase 5)
+1. Remove 8 pages (§Phase 1) ✅
+2. Distill → Quarto (§Phase 2)
+3. Extract shared machinery into `aiqcreport` (§Phase 3)
+4. Roll out to `bal-report` / `med-report` (§Phase 4)
 
-**Ordering rationale.** Removal comes first so nothing dead is ported. The data layer moves
-before the renderer because a data-layer change can be verified against byte-identical HTML —
-the renderer is held constant. The package extraction comes *last* so the code is moved exactly
-once, already Quarto- and SQLite-native, and the sibling repos adopt a finished package rather
-than tracking a moving one.
+**Ordering rationale.** Removal comes first so nothing dead is ported. The package extraction
+comes *last* so the code is moved exactly once, already Quarto-native, and the sibling repos
+adopt a finished package rather than tracking a moving one.
+
+With the data layer frozen, Phase 2 is now the first phase whose output cannot be compared
+byte-for-byte — plan the content-diff harness accordingly (§Phase 0).
 
 Never run two phases at once: output comparison is the verification, and it only works if one
 variable changes at a time.
 
 ---
 
-## Phase 0 — Baseline (skipped)
+## Phase 0 — Baseline (not yet done)
 
-*No SQLite files yet, so Phase 2 has not started; the fingerprint harness is still to be written
-before Phase 2 begins.*
+*Still outstanding, and now the immediate next task: Phase 2 is the first phase that changes
+rendered output, so the baseline must be captured before it starts.*
 
 Capture a reference build to diff against.
 
@@ -46,8 +51,9 @@ cp -r content/docs /tmp/baseline-docs
 
 Also write `scripts/dump_frames.R`: for each dataset, load the parquet frames exactly as the
 pages do, apply the standard filter chain, and dump a fingerprint (row count, column names,
-`digest::digest()` of the sorted frame) to `tests/fingerprints/*.json`. This is the contract
-Phase 2 must preserve, and it is far cheaper to compare than rendered HTML.
+`digest::digest()` of the sorted frame) to `tests/fingerprints/*.json`. The data layer is frozen,
+so these fingerprints must stay identical through every remaining phase — any drift means a page
+started reading different data, which is the failure mode hardest to spot by eye.
 
 **Done when:** baseline HTML exists and `dump_frames.R` produces fingerprints for
 `df_ar`, `df_ar_gl`, `df_ar_cora` and their `qc1`/`qc4` variants.
@@ -110,99 +116,53 @@ duplicate-detection helpers still select `pres_mean`.
 
 ---
 
-## Phase 2 — parquet → SQLite
+## Reversed: parquet → SQLite
 
-Still on Distill. Only the data-access layer changes.
+**Decision D4, 2026-08-20: not doing this.** Recorded here because the reasoning constrains
+future proposals, not as work to schedule.
 
-### Schema
+### Why
 
-Three tables, one DB (`aiqc_arc.sqlite`), replacing 15 parquet files:
+Measured on the raw `ctddump` layer: `nrt_ar_ar.parquet` is 656 MB, the equivalent SQLite is
+**5.2 GB — ~8x**. An earlier prototype on the smaller profile-level summaries this site actually
+reads showed 163 MB vs 51 MB, **~3.2x**. Different layers, same verdict; the raw layer is worse
+because it is where the repetition lives.
 
-```sql
-CREATE TABLE dataset (              -- drives the constants in common_ar*.Rmd
-  dataset_id   TEXT PRIMARY KEY,    -- 'nrt_ar' | 'nrt_ar_gl' | 'cora_ar'
-  region       TEXT,  region_code1 TEXT,  region_code2 TEXT,
-  netcdf_id    TEXT,  netcdf_doi   TEXT
-);
+The blow-up is structural, not a tuning problem. Parquet is a column store: it dictionary-encodes
+`platform_code`, run-length-encodes the sorted keys, and compresses each column independently
+against its own kind of data. SQLite is a row store and keeps every value verbatim in every row,
+then adds B-tree and index overhead on top. Column-heavy analytic data is precisely the shape
+that gap is widest on. `VACUUM`, page-size tuning and dropping indexes would trim the margin,
+not close an 8x gap.
 
-CREATE TABLE profile_summary (      -- was netcdf_*_2_summary.parquet
-  dataset_id TEXT, platform_code TEXT, profile_no INTEGER,
-  profile_timestamp INTEGER,        -- epoch seconds, not TEXT
-  time_qc INTEGER, position_qc INTEGER,
-  longitude REAL, latitude REAL,
-  observation_no_count INTEGER, ...,
-  -- per variable: {pres,temp,psal}_{count,na_count,non_na_count,mean,median,min,max}
-  -- per variable: {pres,temp,psal}_qc_{0..9,A}   -- profile-level flag counts
-  PRIMARY KEY (dataset_id, platform_code, profile_no)
-);
+That kills D2's delivery mechanism outright: **GitHub caps a single release asset at 2 GiB**, so
+5.2 GB cannot be uploaded as one asset regardless of appetite. Splitting or Git LFS would trade a
+solved problem for a worse one — CI already downloads parquet from a release and it works.
 
-CREATE TABLE var_qc_summary (       -- was the 18 *_qc{1,4}_{var}.parquet files
-  dataset_id TEXT, platform_code TEXT, profile_no INTEGER,
-  variable TEXT,                    -- 'temp' | 'psal'  (pres dropped in Phase 1)
-  qc_subset TEXT,                   -- 'qc1' | 'qc4'
-  count INTEGER, na_count INTEGER, non_na_count INTEGER,
-  mean REAL, median REAL, min REAL, max REAL,
-  PRIMARY KEY (dataset_id, platform_code, profile_no, variable, qc_subset)
-);
-CREATE INDEX ix_vqs ON var_qc_summary (dataset_id, variable, qc_subset);
-```
+### If SQL access is ever wanted
 
-Two deliberate normalisations, both verified against current usage:
+The motivation behind SQLite was query convenience, and that is still available without moving
+the bytes: **DuckDB reads parquet files directly** — `SELECT * FROM 'data/netcdf_nrt_ar_2_summary.parquet'`
+— with no conversion step, no second copy, and no new artefact in the release. Reach for that
+before reconsidering a database file.
 
-- The QC-subset files repeat seven identity columns (`platform_code`, `profile_timestamp`,
-  `time_qc`, `position_qc`, `longitude`, `latitude`, `profile_no`) on every row. Store them once
-  in `profile_summary` and join. The filter chain needs them, so the join is required —
-  materialise it into the `df_*_qc1` / `df_*_qc4` frames on load.
-- The QC-subset files also carry `{var}_qc_0..A` flag counts that **no template reads**
-  (the QC pages compute flag counts from the base frame). Dropped.
+### Salvaged from the dropped phase
 
-### Size
+Two items were worth doing on their own and do not depend on the storage format:
 
-Measured on `nrt_ar`: 163 MB indexed SQLite vs 51 MB parquet, ~3.2x. Extrapolating to all three
-Arctic datasets, minus the pressure QC files dropped in Phase 1: **~700-850 MB**, roughly
-250-300 MB gzipped. That is the number D2's release-asset approach has to carry per build;
-if it proves painful, revisit before rolling out to the sibling repos.
+- **The two data layouts.** CI downloads release assets *flat* into `data/`; local checkouts nest
+  them under `data/<source>/`. Today `_func/common_ar*.Rmd` carries commented-out `rsc_dir`
+  overrides that have to be hand-toggled to render locally — an easy thing to commit by accident
+  and break CI with. Pick one layout, or resolve it at runtime. Independent of any phase.
+- **Stale release assets.** After Phase 1 no page loads `*_qc{1,4}_pres.parquet` (~45 MB). They can
+  come out of the release upload and the CI download.
 
-> One caveat worth recording: SQLite is a row store and this is analytic, column-heavy data —
-> DuckDB would hold it at roughly parquet size and read the existing files directly. SQLite was
-> chosen deliberately; noting the trade-off only so the size figures above are not a surprise.
-
-### Code changes
-
-- `_func/common.Rmd`: replace `rsc_dir` / `rsc_dir2` / `release_url` with a single DB path and a
-  connection opened once per page (`DBI::dbConnect(RSQLite::SQLite(), db_path)`); close it in the
-  existing cleanup chunk.
-  **Make the DB path absolute at definition time** — `normalizePath()` it once in `_func/`. The
-  two relative paths that exist today (`../../data` in `_func/`, `../data` in templates) are both
-  correct, because knitr gives `child=` documents a different working directory than
-  `knit_child(text=)` fragments (see CLAUDE.md). A single relative DB path would silently break in
-  one of the two contexts; an absolute one cannot.
-- The two data layouts also collapse here. Today `_func/common_ar*.Rmd` carries commented-out
-  `rsc_dir` overrides because CI downloads release assets *flat* into `data/` while local checkouts
-  keep them nested under `data/<source>/`. One DB file makes the distinction moot — delete the
-  commented lines rather than porting them.
-- `_func/common_ar*.Rmd`: drop the `parquet*` variables and `read_parquet()`; read the dataset row
-  from `dataset` and the frame via one query filtered on `dataset_id`.
-- `_template/load_qc_summary.Rmd`: one parameterised query against `var_qc_summary` joined to
-  `profile_summary`, replacing two `read_parquet()` calls.
-- Convert `profile_timestamp` back to `POSIXct` on load — `format(profile_timestamp, "%Y")`
-  appears in several templates and silently produces garbage on an integer.
-- Consider pushing `filter_profile_level_qc()` into the SQL `WHERE`; leave the rest in dplyr for
-  now, since the frames are small enough once filtered.
-
-`scripts/build_db.R` (or Python — the prototype used `pyarrow` + `sqlite3`) converts parquet →
-SQLite and is run offline, not in CI.
-
-**Verification:** re-run `dump_frames.R` and diff fingerprints against Phase 0. Then rebuild and
-diff HTML against `/tmp/baseline-docs` — with the pressure and comparison pages removed, the
-remaining pages should be *byte-identical*. Any diff is a real regression.
-
-**Done when:** fingerprints match, HTML diff is empty, no `arrow` dependency remains in
-`DESCRIPTION` or the workflow.
+Everything else in the dropped phase — the three-table schema, the `profile_timestamp` epoch
+cast, the absolute-`normalizePath` DB path, `scripts/build_db.R` — is moot and deleted.
 
 ---
 
-## Phase 3 — Distill → Quarto
+## Phase 2 — Distill → Quarto
 
 | Distill | Quarto |
 |---------|--------|
@@ -231,21 +191,21 @@ Notes:
 
 **Verification:** HTML will *not* be byte-identical — different framework, different CSS. Compare
 content instead: for each page, extract table row counts, figure counts, and the rendered numeric
-summaries, and diff those against the Phase 2 build. Then read the pages.
+summaries, and diff those against the Phase 1 build. Then read the pages.
 
 **Done when:** `quarto render content` succeeds, every page's tabs work, TOC is correct, all
 figures render, navbar and index links resolve.
 
 ---
 
-## Phase 4 — Extract `aiqcreport`
+## Phase 3 — Extract `aiqcreport`
 
-New repo. Only after Phases 1-3 are green in `arc-report`.
+New repo. Only after Phases 1-2 are green in `arc-report`.
 
 ```
 aiqcreport/
   R/            summary_common.R, var.R, qc.R, common.R   # plain functions, roxygen'd
-  R/db.R        connection helper + the dataset/profile/var queries
+  R/data.R      parquet loaders + the standard filter chain
   inst/templates/   *.qmd   (all surviving templates, incl. the two location_filtering
                              variants bal-/med- need)
   R/templates.R     template_path("var_summary_stats.qmd") accessor
@@ -260,18 +220,18 @@ aiqcreport/
 - Install in CI via `remotes::install_github("AIQC-Hub/aiqcreport@v0.1.0")` — pin the tag so a
   package change cannot silently alter three published sites.
 
-**Verification:** content diff against the Phase 3 build; this is a pure code move and should
+**Verification:** content diff against the Phase 2 build; this is a pure code move and should
 produce identical output.
 
 ---
 
-## Phase 5 — Sibling repos
+## Phase 4 — Sibling repos
 
 `bal-report` (BO) and `med-report` (MO) are structurally identical — templates are byte-identical
 today except one trailing newline, and `_func/common.Rmd` differs only in `release_url`. Each repo:
 delete `_func/*.Rmd` (except its `common_<region>*`) and `_template/` entirely, depend on
-`aiqcreport`, convert its pages to `.qmd`, apply the same page removals, point at its own SQLite
-release asset.
+`aiqcreport`, convert its pages to `.qmd`, apply the same page removals, and keep pointing at its own
+parquet release asset.
 
 **Watch the side effect when removing these sections from the siblings.**
 `_template/summary_time_location_qc.Rmd` ends with `{{df}} <- df_qc_filtered`, silently rebinding
@@ -283,34 +243,33 @@ are identity); all six sibling summary pages already use `df_filtered_name` and 
 before deleting the section there.
 
 `aiqc-report` is the hub landing site — same Distill→Quarto conversion, but it has no data pages,
-so Phases 2 and 4 do not apply.
+so Phase 3 does not apply.
 
 ---
 
-## CI changes (folded into Phases 2-4)
+## CI changes (folded into Phases 2-3)
 
 `.github/workflows/build-and-deploy.yml`:
 
-- Replace the `gh release download ... --pattern '*'` parquet step with a single gzipped DB
-  download + `gunzip`.
+- The `gh release download v0.1.0 --dir ./data --pattern '*'` step is **unchanged** — parquet
+  stays. Narrow the pattern only if the unused `*_qc{1,4}_pres.parquet` assets are pruned.
 - Add `quarto-dev/quarto-actions/setup@v2`; swap the render step for `quarto render content`.
 - Package list currently lives in **both** `DESCRIPTION` and the workflow — during Phase 4, move
   it to `DESCRIPTION` only and let `setup-r-dependencies` read it, so the two cannot drift.
-- Net dependency change: `-arrow`, `-distill`, `-xaringanExtra`, `+DBI`, `+RSQLite`, `+aiqcreport`.
+- Net dependency change: `-distill`, `-xaringanExtra`, `+quarto`, `+aiqcreport`. `arrow` stays.
 
 ## Risks
 
 | Risk | Mitigation |
 |------|------------|
-| ~800 MB DB slows every CI run | Measure the gzipped download in Phase 2 before committing to it for 3 repos; per-dataset DBs are the fallback |
 | Panelset → tabset conversion silently loses a tab | Phase 3 content diff counts tabs per page |
-| `profile_timestamp` type change breaks year/month grouping | Explicit `POSIXct` cast on load; fingerprint test covers it |
+| A page silently changes which data it reads during the Quarto port | Phase 0 fingerprints are re-checked after every phase |
 | Package extraction diverges from what the sibling repos need | Keep all three `location_filtering` variants; extract only after arc-report is green |
 | Version drift between the package and three sites | Pin `aiqcreport` by tag in each workflow |
 
 ## Open questions
 
-- Does `ctddump` (the upstream producer) write parquet today? If so, having it emit SQLite
-  directly would remove `build_db.R` and the conversion step entirely — worth checking before
-  Phase 2.
-- Whether the sibling repos should share one DB per region or one DB overall. Deferred to Phase 5.
+- Which data layout wins — flat (as CI downloads) or nested `data/<source>/` (as local checkouts
+  have)? Needed to retire the commented-out `rsc_dir` overrides.
+- Can the unused `*_qc{1,4}_pres.parquet` assets be pruned from release `v0.1.0`, or does another
+  consumer read them?
