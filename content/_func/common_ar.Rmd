@@ -18,8 +18,6 @@ df_qc1_filtered_name <- "df_ar_qc1_filtered"
 df_qc4_filtered_name <- "df_ar_qc4_filtered"
 
 # Path
-#rsc_dir <- "../../data/nrt_ar"
-#rsc_dir2 <- "../data/nrt_ar"
 df_filtered_cache_name <- file.path(normalizePath(rsc_dir), paste0(df_filtered_name, ".rds"))
 
 # Data frame

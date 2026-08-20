@@ -15,8 +15,7 @@ df_year_qc4 <- summary_table_var3_qc4 %>%
 
 ```
 
-::: {.panelset}
-::: {.panel}
+::: {.panel-tabset}
 
 ### All
 
@@ -25,10 +24,6 @@ p_year_bp <- create_var_boxplot(df_year, "{{var_name}}")
 
 print(p_year_bp)
 ```
-
-:::
-
-::: {.panel}
 
 ### Good (QC == 1)
 
@@ -46,10 +41,6 @@ if (nrow(df_year_qc1) > 0) {
 
 ```
 
-:::
-
-::: {.panel}
-
 ### Bad (QC == 4)
 
 ```{r, t_var_dist_year4, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 10}
@@ -66,5 +57,4 @@ if (nrow(df_year_qc4) > 0) {
 
 ```
 
-:::
 :::

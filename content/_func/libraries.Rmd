@@ -13,7 +13,5 @@ library(cowplot)
 library(scales)
 library(maps)
 library(hexbin)
-library(xaringanExtra)
-xaringanExtra::use_panelset()
 
 ```

@@ -12,6 +12,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   and `--check` compares against the committed baseline in `tests/fingerprints/`.
 
 ### Changed
+- The site is now built with **Quarto** instead of Distill. Pages are `.qmd`, `_site.yml` became
+  `content/_quarto.yml`, and xaringanExtra panelsets became Quarto `::: {.panel-tabset}`.
+  Verified against the pre-port build: every rendered value, figure, table and DataTable payload
+  is identical on all 16 pages, and all 16 keep their tab structure.
+- `_func/common.Rmd` resolves the data directory once to an absolute path (overridable with
+  `ARC_DATA_DIR`). Quarto runs `child=` documents in the page's directory where rmarkdown gave
+  them their own, so the previous `rsc_dir` / `rsc_dir2` split no longer worked.
 - Input data now comes from `ctddump` + `seastamp` instead of the R-built summaries published as
   release assets. Figures change accordingly and are not reconciled against the previous site:
   AR 295,156 profiles / 79,134,055 observations, GL 173,481 / 50,392,172,
@@ -22,6 +29,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (`df_filtered_name`), matching every other summary page. It previously relied on a side
   effect of the removed "Profile level QC flags" section, which reassigned the source frame
   in place. Reported figures are unchanged.
+
+### Fixed
+- `qc_basic_info`, `summary_basic_info` and `var_basic_info` linked to a literal `parquet_url`
+  rather than `{{parquet_url}}`, producing a broken link on every page. Pre-existing.
 
 ### Removed
 - Summary page sections "Profile level QC flags", "Location Filtering", "Duplicate Profiles

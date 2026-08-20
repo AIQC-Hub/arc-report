@@ -1,11 +1,7 @@
 ---
-title: "Practical Salinity QC (AR)"
+title: "Temperature QC (GL)"
 description: |
-  Basic analysis of the salinity QC data from the Arctic Ocean in situ NRT observations.
-output:
-  distill::distill_article:
-    toc: true
-    toc_depth: 2
+  Basic analysis of the temperature QC data from the Arctic Ocean in situ NRT observations.
 ---
 
 ```{r include = FALSE}
@@ -13,12 +9,12 @@ knitr::opts_chunk$set(echo=FALSE)
 
 # Common functions
 r_func_path <- "./_func"
-r_funcs <- c("libraries.Rmd", "common.Rmd", "common_ar.Rmd", "qc.Rmd")
+r_funcs <- c("libraries.Rmd", "common.Rmd", "common_ar_gl.Rmd", "qc.Rmd")
 
 # Variables
-var <- "psal"
-qc_var <- "psal_qc"
-qc_var_name <- "Practical salinity QC flag"
+var <- "temp"
+qc_var <- "temp_qc"
+qc_var_name <- "Temperature QC flag"
 ```
 
 ```{r, import, child=file.path(r_func_path, r_funcs)}

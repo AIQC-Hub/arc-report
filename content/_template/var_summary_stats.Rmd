@@ -1,5 +1,4 @@
-::: {.panelset}
-::: {.panel}
+::: {.panel-tabset}
 
 ### All
 
@@ -41,10 +40,6 @@ create_dt_summary_tab(summary_table_var1 %>% format_var_summary_1("{{var_label}}
 
 ```
 
-:::
-
-::: {.panel}
-
 ### Good (QC == 1)
 
 #### NA value counts
@@ -80,10 +75,6 @@ create_dt_summary_tab(summary_table_var1 %>% format_var_summary_1("{{var_label}}
                              'Mean({{var_label}})', 'Max({{var_label}})'))
 
 ```
-
-:::
-
-::: {.panel}
 
 ### Bad (QC == 4)
 
@@ -121,5 +112,4 @@ create_dt_summary_tab(summary_table_var1 %>% format_var_summary_1("{{var_label}}
 
 ```
 
-:::
 :::

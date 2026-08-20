@@ -239,7 +239,24 @@ Internal consistency, since there is no before/after to diff:
 
 ---
 
-## Phase 3 — Distill → Quarto
+## Phase 3 — Distill → Quarto ✅
+
+*Done. 16 pages render under Quarto 1.10.18; every value, figure, table and DT payload matches the
+Phase 2 baseline, and all 16 pages keep their tab structure (4 tabsets / 12 panels on the variable
+pages, 1 / 2 elsewhere).*
+
+**The one real gotcha: the working directory changed.** rmarkdown evaluated a `child=` document in
+*that child's own directory*; Quarto evaluates every context in the page's directory. Measured, not
+assumed — a probe page reported `content/` for the page, the `_func/` child and a
+`knit_child(text=)` fragment alike. So `rsc_dir <- "../../data"` broke immediately on the first
+render. `_func/common.Rmd` now resolves the data directory once to an absolute path, probing
+`../data` then `../../data` for a directory that actually contains parquet files — a bare
+`dir.exists()` would match an unrelated `data/` further up the tree. `rsc_dir2` is now an alias.
+
+Fixed in passing: `qc_basic_info`, `summary_basic_info` and `var_basic_info` all linked to a
+literal `parquet_url` instead of `{{parquet_url}}` — a broken link on every page, present in the
+Distill build too.
+
 
 | Distill | Quarto |
 |---------|--------|
@@ -266,12 +283,14 @@ Notes:
 - `.Rproj` `BuildType: Website` still works, but Quarto's own preview (`quarto preview content`)
   is the better local loop.
 
-**Verification:** HTML will *not* be byte-identical — different framework, different CSS. Compare
-content instead: for each page, extract table row counts, figure counts, and the rendered numeric
-summaries, and diff those against the Phase 2 build. Then read the pages.
+**Verification:** HTML is *not* byte-identical — different framework, different CSS. The content
+diff compares, per page, every `<code>label</code>: value` pair, figure count, table count and DT
+payload count, plus tabset/panel counts and tab labels. Result: identical on all 16 pages. The only
+heading differences are Distill's "Contents" TOC title and the tab labels, which Quarto renders as
+tab buttons rather than `<h3>` — both confirmed by the tabset check.
 
-**Done when:** `quarto render content` succeeds, every page's tabs work, TOC is correct, all
-figures render, navbar and index links resolve.
+**Done:** `quarto render content` succeeds, tabs work, TOC is correct (toc-depth 2, `##` only),
+navbar has its 3 menus, and every internal link resolves.
 
 ---
 

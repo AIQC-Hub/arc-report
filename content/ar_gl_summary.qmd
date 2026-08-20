@@ -2,10 +2,6 @@
 title: "Profile Summary (GL)"
 description: |
   Profile summary report generated from a single Parquet file has been created from around 550 NetCDF files from the Arctic Ocean in situ NRT observations.
-output:
-  distill::distill_article:
-    toc: true
-    toc_depth: 2
 ---
 
 ```{r include = FALSE}

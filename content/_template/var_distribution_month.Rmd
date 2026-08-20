@@ -11,8 +11,7 @@ df_month_qc4 <- summary_table_var3_qc4 %>%
 
 ```
 
-::: {.panelset}
-::: {.panel}
+::: {.panel-tabset}
 
 ### All
 
@@ -21,10 +20,6 @@ p_month_bp <- create_var_boxplot(df_month, "{{var_name}}")
 
 print(p_month_bp)
 ```
-
-:::
-
-::: {.panel}
 
 ### Good (QC == 1)
 
@@ -42,10 +37,6 @@ if (nrow(df_month_qc1) > 0) {
 
 ```
 
-:::
-
-::: {.panel}
-
 ### Bad (QC == 4)
 
 ```{r, t_var_dist_month4, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 10}
@@ -62,5 +53,4 @@ if (nrow(df_year_qc4) > 0) {
 
 ```
 
-:::
 :::

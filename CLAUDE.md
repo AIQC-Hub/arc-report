@@ -1,8 +1,9 @@
 # arc-report
 
-R Markdown / **Distill** website publishing CTD (temperature, salinity, pressure) data-summary
-reports for the **Arctic Ocean** in situ observations. Built to GitHub Pages at
-<https://aiqc-hub.github.io/arc-report/>.
+**Quarto** website publishing CTD (temperature, salinity, pressure) data-summary reports for the
+**Arctic Ocean** in situ observations. Built to GitHub Pages at
+<https://aiqc-hub.github.io/arc-report/>. Pages are `.qmd` on the knitr engine; the `_func/` and
+`_template/` children are still `.Rmd`, since Quarto never scans them — they are read by path.
 
 Three datasets, each rendered as its own set of pages:
 
@@ -15,28 +16,33 @@ Three datasets, each rendered as its own set of pages:
 ## Layout
 
 ```
-content/            # Distill site root (WebsitePath in .Rproj)
-  _site.yml         # navbar, output_dir: docs
-  index.Rmd         # landing page
-  ar[_gl|_cora]_{summary,pres,temp,psal,pres_qc,temp_qc,psal_qc}.Rmd
-  ar_nrt_{ar,gl}_vs_cora.Rmd
+content/            # Quarto project root
+  _quarto.yml       # project type, navbar, output-dir: docs, shared html format
+  index.qmd         # landing page
+  ar[_gl|_cora]_{summary,temp,psal,temp_qc,psal_qc}.qmd     # 15 pages + index
   _func/            # sourced as knitr children: shared setup + R functions
   _template/        # knit_expand templates ({{param}} placeholders)
   docs/             # BUILD OUTPUT — generated, git-ignored, do not hand-edit
 data -> /scratch/data/aiqc/merged   # symlink; parquet inputs (git-ignored)
+scripts/            # build_summaries.R (data), dump_frames.R (fingerprints)
+tests/fingerprints/ # committed baseline; tests/baseline-docs/ is git-ignored
 ```
+
+`_func` and `_template` are underscore-prefixed, so Quarto's project scan ignores them — which is
+what we want, they are children rather than pages.
 
 ## How a page is built
 
-Every page follows the same three-layer pattern — read one page (e.g. `content/ar_temp.Rmd`)
+Every page follows the same three-layer pattern — read one page (e.g. `content/ar_temp.qmd`)
 and the pattern generalises to all of them.
 
-1. **Page `.Rmd`** — YAML front matter, then a chunk setting `r_funcs` (which `_func/` files to
+1. **Page `.qmd`** — YAML front matter (title and description only; `format` is shared in
+   `_quarto.yml`), then a chunk setting `r_funcs` (which `_func/` files to
    load) and page variables (`var`, `var_name`, `var_label`, `qc_var`, …).
 2. **`_func/` children** — pulled in via `child=file.path(r_func_path, r_funcs)`. Order matters:
    `libraries.Rmd` → `common.Rmd` (paths, template registry `t_*`, shared helpers) →
    one `common_ar*.Rmd` (dataset constants, loads the parquet into `df_*`) → topic functions
-   (`summary_common.Rmd`, `var.Rmd`, `qc.Rmd`, `comp.Rmd`).
+   (`summary_common.Rmd`, `var.Rmd`, `qc.Rmd`).
 3. **`_template/` fragments** — expanded and knitted per section:
    ```r
    src <- knitr::knit_expand(t_v_summary_stats, df = df_filtered_name, var = var)
@@ -46,22 +52,23 @@ and the pattern generalises to all of them.
    Templates use `{{placeholder}}`; every template path is registered as a `t_*` variable in
    `_func/common.Rmd`. Data frames are passed **by name (string)**, not by value.
 
-**Working directory rule (subtle, bites often).** knitr evaluates a `child=` document with the
-working directory set to *that child's own directory*, while `knit_child(text = ...)` runs in the
-page's directory. So relative paths mean different things depending on where the code lives:
+**Working directory (measured, not assumed).** Under Quarto all three contexts share the same
+working directory, `content/`:
 
-| Code lives in | Effective wd | Path to `data/` |
-|---------------|--------------|-----------------|
-| a page `.Rmd` | `content/` | `../data` |
-| `_func/*.Rmd` (loaded via `child=`) | `content/_func/` | `../../data` |
-| `_template/*.Rmd` (via `knit_expand` + `knit_child(text=)`) | `content/` | `../data` |
+| Code lives in | Effective wd under Quarto | (was, under rmarkdown) |
+|---------------|---------------------------|------------------------|
+| a page `.qmd` | `content/` | `content/` |
+| `_func/*.Rmd` (loaded via `child=`) | `content/` | `content/_func/` |
+| `_template/*.Rmd` (via `knit_expand` + `knit_child(text=)`) | `content/` | `content/` |
 
-This is why `_func/common.Rmd` defines **both** `rsc_dir <- "../../data"` (consumed in `_func/`)
-and `rsc_dir2 <- "../data"` (consumed in templates). They point at the same directory; neither is
-a bug. Do not "fix" one to match the other.
+The middle row changed with the port: rmarkdown gave a `child=` document its own directory,
+Quarto does not. `_func/common.Rmd` therefore resolves the data directory **once to an absolute
+path**, by probing `../data` then `../../data` for a directory containing parquet files, and
+`rsc_dir2` is now just an alias of `rsc_dir`. Both names are kept because the templates refer to
+`rsc_dir2`. Do not replace either with a bare relative path — that is what broke on the port.
 
-Other conventions: pages end with `rm(list = ls())`; tabbed sections use xaringanExtra
-panelsets (`::: {.panelset}` / `::: {.panel}`); chunk labels must be unique per page.
+Other conventions: pages end with `rm(list = ls())`; tabbed sections use Quarto tabsets
+(`::: {.panel-tabset}` with one heading per tab); chunk labels must be unique per page.
 
 ## Data model
 
@@ -103,14 +110,18 @@ Standard filtering chain applied on every page (`_template/location_filtering.Rm
 Rscript scripts/build_summaries.R                  # obs-level -> profile summaries (skips if current)
 Rscript scripts/dump_frames.R                      # fingerprint every frame the pages read
 Rscript scripts/dump_frames.R --check              # ... and compare against the committed baseline
-Rscript -e 'rmarkdown::render_site(input = "content", encoding = "UTF-8")'
-Rscript -e 'rmarkdown::render_site(input = "content", output_format = "distill::distill_article", encoding = "UTF-8")'  # all
-Rscript -e 'rmarkdown::render("content/ar_temp.Rmd")'   # single page while iterating (slow otherwise)
+quarto render content                              # whole site -> content/docs
+quarto render content/ar_temp.qmd                  # single page while iterating (slow otherwise)
+quarto preview content                             # live preview
 ```
 
-CI (`.github/workflows/build-and-deploy.yml`) runs on push to `main`: downloads parquet files
-from GitHub release `v0.1.0` into `./data`, renders the site, publishes `content/docs` to Pages.
+CI (`.github/workflows/build-and-deploy.yml`) runs on push to `main`: downloads parquet from
+GitHub release `v0.1.0` into `./data`, sets up Quarto, renders, publishes `content/docs` to Pages.
 R dependencies are listed in **both** `DESCRIPTION` and the workflow — update both together.
+
+⚠️ **The release assets are stale.** They still hold the retired R-built summaries; the site now
+expects what `scripts/build_summaries.R` produces (15 files, 150 MB). CI will build green but
+publish the old numbers until a new release is cut from the new summaries.
 
 ## Repo conventions
 
@@ -121,7 +132,7 @@ R dependencies are listed in **both** `DESCRIPTION` and the workflow — update 
 
 ## In-flight migration
 
-Distill → Quarto, in four phases: remove 8 pages (done) → Distill-to-Quarto → extract the
+Five phases: remove 8 pages ✅ → switch to seastamp inputs ✅ → Distill-to-Quarto ✅ → extract the
 shared `aiqcreport` package → roll out to `bal-report` / `med-report`.
 
 **Parquet stays.** A parquet-to-SQLite move was planned and then reversed: SQLite came out ~8x

@@ -88,14 +88,10 @@ fingerprint <- function(df) {
 
 collect <- function(id, spec) {
   env <- new.env(parent = globalenv())
+  # common.Rmd probes upwards for the data directory relative to its working
+  # directory; this script runs from the repo root, so name it outright.
+  Sys.setenv(ARC_DATA_DIR = data_dir)
   source_rmd("common.Rmd", env)
-
-  # common.Rmd's paths are relative to its own directory (knitr gives a `child=`
-  # document that working directory -- see CLAUDE.md). This script runs from the
-  # repo root, so point both at the real directory instead.
-  env$rsc_dir  <- data_dir
-  env$rsc_dir2 <- data_dir
-
   source_rmd(spec$common, env)   # defines the constants and loads the base frame
 
   out <- list()

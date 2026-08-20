@@ -1,11 +1,7 @@
 ---
-title: "Temperature QC (GL)"
+title: "Temperature QC (CORA)"
 description: |
-  Basic analysis of the temperature QC data from the Arctic Ocean in situ NRT observations.
-output:
-  distill::distill_article:
-    toc: true
-    toc_depth: 2
+  Basic analysis of the temperature QC data from the CORA In-situ observations.
 ---
 
 ```{r include = FALSE}
@@ -13,7 +9,7 @@ knitr::opts_chunk$set(echo=FALSE)
 
 # Common functions
 r_func_path <- "./_func"
-r_funcs <- c("libraries.Rmd", "common.Rmd", "common_ar_gl.Rmd", "qc.Rmd")
+r_funcs <- c("libraries.Rmd", "common.Rmd", "common_ar_cora.Rmd", "qc.Rmd")
 
 # Variables
 var <- "temp"

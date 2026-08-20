@@ -1,0 +1,30 @@
+---
+title: "Arctic Ocean Summary Report"
+description: |
+  We provide a collection of resources and summary reports containing statistics and other relevant information about the datasets.
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Contents
+
+1. Profile Summary
+    - [Profile Summary (AR)](./ar_summary.qmd)
+    - [Profile Summary (GL)](./ar_gl_summary.qmd)
+    - [Profile Summary (CORA)](./ar_cora_summary.qmd)
+1. Temperature
+    - [Temperature (AR)](./ar_temp.qmd)
+    - [Temperature (GL)](./ar_gl_temp.qmd)
+    - [Temperature (CORA)](./ar_cora_temp.qmd)
+    - [Temperature QC (AR)](./ar_temp_qc.qmd)
+    - [Temperature QC (GL)](./ar_gl_temp_qc.qmd)
+    - [Temperature QC (CORA)](./ar_cora_temp_qc.qmd)
+1. Salinity
+    - [Salinity (AR)](./ar_psal.qmd)
+    - [Salinity (GL)](./ar_gl_psal.qmd)
+    - [Salinity (CORA)](./ar_cora_psal.qmd)
+    - [Salinity QC (AR)](./ar_psal_qc.qmd)
+    - [Salinity QC (GL)](./ar_gl_psal_qc.qmd)
+    - [Salinity QC (CORA)](./ar_cora_psal_qc.qmd)

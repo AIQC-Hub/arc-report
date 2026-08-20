@@ -18,8 +18,6 @@ df_qc1_filtered_name <- "df_ar_cora_qc1_filtered"
 df_qc4_filtered_name <- "df_ar_cora_qc4_filtered"
 
 # Path
-#rsc_dir <- "../../data/cora_ar"
-#rsc_dir2 <- "../data/cora_ar"
 
 # Data frame
 ar_file_name <- file.path(rsc_dir, parquet)

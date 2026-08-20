@@ -4,4 +4,4 @@
 
 ### Input data file
 
-  - **{{region_code2}} data**: [{{parquet}}](parquet_url)
+  - **{{region_code2}} data**: [{{parquet}}]({{parquet_url}})

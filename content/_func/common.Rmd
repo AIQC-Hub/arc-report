@@ -1,18 +1,27 @@
-<style>
-.panelset > .panel-tabs {
-  display: flex;
-}
-.panelset > .panel-tabs li {
-  flex: 1;
-  text-align: center;
-}
-</style>
-
 ```{r, func_common, message = FALSE, warning = FALSE}
 
 # Path
-rsc_dir <- "../../data"
-rsc_dir2 <- "../data"
+#
+# Resolved once to an absolute path, because the working directory a child
+# document runs in is not stable: rmarkdown gave `child=` documents their own
+# directory (content/_func), Quarto gives every context the page's directory
+# (content). A single relative path cannot be right in both, so probe upwards
+# for `data/` instead and let every consumer use the absolute result.
+# The parquet check matters: bare dir.exists() would happily match an unrelated
+# `data` directory further up the tree.
+rsc_dir <- local({
+  # ARC_DATA_DIR lets tooling that runs from elsewhere (scripts/dump_frames.R,
+  # CI) name the directory outright instead of relying on the probe.
+  from_env <- Sys.getenv("ARC_DATA_DIR", unset = "")
+  if (nzchar(from_env)) return(normalizePath(from_env, mustWork = TRUE))
+  for (p in c("../data", "../../data")) {
+    if (dir.exists(p) && length(list.files(p, pattern = "\\.parquet$")) > 0) {
+      return(normalizePath(p))
+    }
+  }
+  stop("no data directory with parquet files found, from ", getwd())
+})
+rsc_dir2 <- rsc_dir
 release_url <- "https://github.com/AIQC-Hub/arc-insitu-nrt-report/releases/download/v0.1.0"
 
 # Templates
