@@ -118,6 +118,7 @@ Standard filtering chain applied on every page (`_template/location_filtering.Rm
 ## Build & deploy
 
 ```bash
+./build.sh                                         # what RStudio's Build pane runs
 Rscript scripts/build_summaries.R                  # obs-level -> profile summaries (skips if current)
 Rscript scripts/dump_frames.R                      # fingerprint every frame the pages read
 Rscript scripts/dump_frames.R --check              # ... and compare against the committed baseline
@@ -125,6 +126,17 @@ quarto render content                              # whole site -> content/docs
 quarto render content/ar_temp.qmd                  # single page while iterating (slow otherwise)
 quarto preview content                             # live preview
 ```
+
+**RStudio's Build pane.** `.Rproj` uses `BuildType: Custom` pointing at `build.sh`, not
+`BuildType: Website`. RStudio only recognises a Quarto project when `_quarto.yml` sits beside the
+`.Rproj`; ours is in `content/`, so RStudio would fall back to `rmarkdown::render_site()` and fail
+with *"No site generator found"*. Moving `_quarto.yml` to the repo root is not the fix either —
+Quarto lays output out relative to the project root, so pages would land in `content/docs/content/`.
+
+`build.sh` also checks that `reportlib` is installed for whichever `Rscript` is first on `PATH`.
+This machine has two R installations — `/usr/local/bin/Rscript` (4.4.1, has everything) and
+`/usr/bin/Rscript` (4.6.0, does not) — and without the check a mismatch surfaces as a knitr
+backtrace on the first page instead of as the missing dependency it is.
 
 CI (`.github/workflows/build-and-deploy.yml`) runs on push to `main`: downloads parquet from
 GitHub release `v0.1.0` into `./data`, sets up Quarto, renders, publishes `content/docs` to Pages.
