@@ -14,6 +14,7 @@ suppressPackageStartupMessages(library(reportlib))
 args <- commandArgs(trailingOnly = TRUE)
 repo <- normalizePath(file.path(dirname(sub("^--file=", "",
           grep("^--file=", commandArgs(FALSE), value = TRUE)[1])), ".."))
+cfg  <- yaml::read_yaml(file.path(repo, "config.yml"))$data
 
 # `vars` lists the variables whose QC subsets a page still loads; pressure is
 # absent because the pressure pages were removed.
@@ -24,7 +25,7 @@ ok <- fingerprint_frames(
     ar_cora = list(common = "common_ar_cora.Rmd", vars = c("temp", "psal"))
   ),
   func_dir = file.path(repo, "content", "_func"),
-  data_dir = Sys.getenv("ARC_DATA_DIR", unset = file.path(repo, "data")),
+  data_dir = Sys.getenv("ARC_DATA_DIR", unset = cfg$summary_dir),
   out_dir  = file.path(repo, "tests", "fingerprints"),
   check    = "--check" %in% args
 )

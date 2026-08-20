@@ -1,0 +1,13 @@
+# Where this site's data lives. The paths are deliberately here rather than in
+# the reportlib package: the package is public and should carry no machine's
+# filesystem layout.
+#
+#   scripts/build_summaries.R reads seastamp_dir and writes summary_dir.
+#   scripts/dump_frames.R reads summary_dir.
+#   The pages reach the same summaries through the repo's `data` symlink, which
+#   should point at summary_dir.
+#
+# SEASTAMP_DIR and SUMMARY_DIR override these at run time.
+data:
+  seastamp_dir: /scratch/data/aiqc/seastamp/stamped/depth
+  summary_dir: /scratch/data/aiqc/merged

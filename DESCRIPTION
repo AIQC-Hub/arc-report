@@ -6,8 +6,9 @@ Description: R Markdown source for the in situ summary report.\
 License: MIT
 Encoding: UTF-8
 Imports:
-    rmarkdown
+    rmarkdown,
+    yaml
 Remotes:
-    github::AIQC-Hub/reportlib@v0.1.0
+    github::AIQC-Hub/reportlib@v0.1.1
 Depends:
     reportlib
