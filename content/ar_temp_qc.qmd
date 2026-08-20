@@ -8,7 +8,7 @@ description: |
 knitr::opts_chunk$set(echo=FALSE)
 
 # Common functions
-library(aiqcreport)
+library(reportlib)
 r_func_path <- "./_func"
 r_funcs <- c("common_site.Rmd", "common_ar.Rmd")
 

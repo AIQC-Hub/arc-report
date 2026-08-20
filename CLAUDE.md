@@ -4,7 +4,7 @@
 **Arctic Ocean** in situ observations. Built to GitHub Pages at
 <https://aiqc-hub.github.io/arc-report/>. Pages are `.qmd` on the knitr engine.
 
-**The shared machinery lives in the [`aiqcreport`](https://github.com/AIQC-Hub/aiqcreport)
+**The shared machinery lives in the [`reportlib`](https://github.com/AIQC-Hub/reportlib)
 package**, not here — every function and every `{{placeholder}}` template is packaged and shared
 with `bal-report` / `med-report`. This repo keeps only what is genuinely local: its pages, its
 region constants in `_func/common_*.Rmd`, and `_quarto.yml`. Fix shared behaviour in the package,
@@ -45,7 +45,7 @@ Every page follows the same three-layer pattern — read one page (e.g. `content
 and the pattern generalises to all of them.
 
 1. **Page `.qmd`** — YAML front matter (title and description only; `format` is shared in
-   `_quarto.yml`), then a chunk calling `library(aiqcreport)` and setting `r_funcs` and the page
+   `_quarto.yml`), then a chunk calling `library(reportlib)` and setting `r_funcs` and the page
    variables (`var`, `var_name`, `var_label`, `qc_var`, …).
 2. **`_func/` children** — pulled in via `child=file.path(r_func_path, r_funcs)`. Order matters:
    `common_site.Rmd` (repo constants) → one `common_ar*.Rmd` (dataset constants, loads the parquet
@@ -144,7 +144,7 @@ publish the old numbers until a new release is cut from the new summaries.
 ## In-flight migration
 
 Five phases: remove 8 pages ✅ → switch to seastamp inputs ✅ → Distill-to-Quarto ✅ → extract the
-shared `aiqcreport` package ✅ → roll out to `bal-report` / `med-report` ✅.
+shared `reportlib` package ✅ → roll out to `bal-report` / `med-report` ✅.
 
 **Parquet stays.** A parquet-to-SQLite move was planned and then reversed: SQLite came out ~8x
 larger (656 MB → 5.2 GB on `nrt_ar_ar`), past GitHub's 2 GiB release-asset cap. Do not

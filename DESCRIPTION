@@ -8,6 +8,6 @@ Encoding: UTF-8
 Imports:
     rmarkdown
 Remotes:
-    github::AIQC-Hub/aiqcreport@v0.1.0
+    github::AIQC-Hub/reportlib@v0.1.0
 Depends:
-    aiqcreport
+    reportlib

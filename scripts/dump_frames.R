@@ -2,14 +2,14 @@
 #
 # Fingerprint every data frame this site's pages load, so later changes can be
 # shown not to have altered what the pages read. The work lives in
-# aiqcreport::fingerprint_frames(); this only names the datasets.
+# reportlib::fingerprint_frames(); this only names the datasets.
 #
 # Usage:
 #   Rscript scripts/dump_frames.R                 # writes tests/fingerprints/
 #   Rscript scripts/dump_frames.R --check         # compares against what is there
 #   ARC_DATA_DIR=/path/to/parquet Rscript scripts/dump_frames.R
 #
-suppressPackageStartupMessages(library(aiqcreport))
+suppressPackageStartupMessages(library(reportlib))
 
 args <- commandArgs(trailingOnly = TRUE)
 repo <- normalizePath(file.path(dirname(sub("^--file=", "",

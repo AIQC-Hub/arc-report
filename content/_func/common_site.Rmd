@@ -1,7 +1,7 @@
 ```{r, func_common_site, message = FALSE, warning = FALSE}
 
 # Repo-level constants. Everything dataset-specific lives in common_ar*.Rmd,
-# everything shared across the regional sites lives in the aiqcreport package.
+# everything shared across the regional sites lives in the reportlib package.
 
 release_url <- "https://github.com/AIQC-Hub/arc-insitu-nrt-report/releases/download/v0.1.0"
 

@@ -11,7 +11,7 @@ only the renderer and the code layout do.
 
 | # | Decision | Choice |
 |---|----------|--------|
-| D1 | Duplicated `_func` / `_template` across region repos | Extract to a shared R package **`aiqcreport`** (new repo), templates in `inst/templates/` |
+| D1 | Duplicated `_func` / `_template` across region repos | Extract to a shared R package **`reportlib`** (new repo), templates in `inst/templates/` |
 | D2 | Storage format | **Parquet, unchanged.** SQLite reversed on measured size (D4) |
 | D3 | Pages to drop | **Pressure pages** (6) and **NRT vs CORA pages** (2) |
 | D4 | parquet → SQLite | **Reversed 2026-08-20.** ~8x size blow-up; 5.2 GB exceeds GitHub's 2 GiB release-asset cap |
@@ -25,7 +25,7 @@ Four phases, deliberately sequenced so each is verifiable on its own:
 1. Remove 8 pages (§Phase 1) ✅
 2. Switch to the seastamp inputs (§Phase 2)
 3. Distill → Quarto (§Phase 3)
-4. Extract shared machinery into `aiqcreport` (§Phase 4)
+4. Extract shared machinery into `reportlib` (§Phase 4)
 5. Roll out to `bal-report` / `med-report` (§Phase 5)
 
 **Ordering rationale.** Removal comes first so nothing dead is ported. The data layer moves
@@ -294,9 +294,9 @@ navbar has its 3 menus, and every internal link resolves.
 
 ---
 
-## Phase 4 — Extract `aiqcreport` ✅
+## Phase 4 — Extract `reportlib` ✅
 
-*Done. The package lives at `/scratch/workspace/aiqcreport` (not yet pushed). arc-report keeps
+*Done. The package lives at `/scratch/workspace/reportlib` (not yet pushed). arc-report keeps
 only its pages, `_func/common_site.Rmd`, three `_func/common_ar*.Rmd` region files and
 `_quarto.yml`; 23 shared files moved out.*
 
@@ -322,13 +322,13 @@ by `knit_expand`, never rendered by Quarto, and keeping the names identical make
 provable no-op.
 
 ⚠️ **The package is local only.** `DESCRIPTION` and the workflow already point at
-`github::AIQC-Hub/aiqcreport@v0.1.0`; CI cannot install it until that repo is pushed and tagged.
+`github::AIQC-Hub/reportlib@v0.1.0`; CI cannot install it until that repo is pushed and tagged.
 
 
 New repo. Only after Phases 1-3 are green in `arc-report`.
 
 ```
-aiqcreport/
+reportlib/
   R/            summary_common.R, var.R, qc.R, common.R   # plain functions, roxygen'd
   R/data.R      parquet loaders + the standard filter chain
   inst/templates/   *.qmd   (all surviving templates, incl. the two location_filtering
@@ -338,12 +338,12 @@ aiqcreport/
 
 - `_func/{common,summary_common,var,qc}.Rmd` become package R files, split by topic
   (`filters.R`, `tables.R`, `summary.R`, `var.R`, `qc.R`, `duplicates.R`, `paths.R`). The
-  knitr-child mechanism disappears for these; pages call `library(aiqcreport)`.
+  knitr-child mechanism disappears for these; pages call `library(reportlib)`.
 - The `t_*` registry in `common.Rmd` becomes `template_path()` over `inst/templates/`, so pages
   stop hard-coding `./_template` and the paths keep working from any working directory.
 - What stays in each site repo: `content/_func/common_<region>*.qmd` (region constants only),
   the page `.qmd` files, `_quarto.yml`, and the workflow.
-- Install in CI via `remotes::install_github("AIQC-Hub/aiqcreport@v0.1.0")` — pin the tag so a
+- Install in CI via `remotes::install_github("AIQC-Hub/reportlib@v0.1.0")` — pin the tag so a
   package change cannot silently alter three published sites.
 
 **Verification:** content diff against the Phase 3 build; this is a pure code move and should
@@ -383,7 +383,7 @@ copied into two more repos, each site keeping a wrapper that only names its data
 `bal-report` (BO) and `med-report` (MO) are structurally identical — templates are byte-identical
 today except one trailing newline, and `_func/common.Rmd` differs only in `release_url`. Each repo:
 delete `_func/*.Rmd` (except its `common_<region>*`) and `_template/` entirely, depend on
-`aiqcreport`, convert its pages to `.qmd`, apply the same page removals, and keep pointing at its own
+`reportlib`, convert its pages to `.qmd`, apply the same page removals, and keep pointing at its own
 parquet release asset.
 
 **Watch the side effect when removing these sections from the siblings.**
@@ -409,7 +409,7 @@ so Phase 4 does not apply.
 - Add `quarto-dev/quarto-actions/setup@v2`; swap the render step for `quarto render content`.
 - Package list currently lives in **both** `DESCRIPTION` and the workflow — during Phase 4, move
   it to `DESCRIPTION` only and let `setup-r-dependencies` read it, so the two cannot drift.
-- Net dependency change: `-distill`, `-xaringanExtra`, `+quarto`, `+aiqcreport`. `arrow` stays.
+- Net dependency change: `-distill`, `-xaringanExtra`, `+quarto`, `+reportlib`. `arrow` stays.
 
 ## Risks
 
@@ -418,7 +418,7 @@ so Phase 4 does not apply.
 | Panelset → tabset conversion silently loses a tab | Phase 3 content diff counts tabs per page |
 | A page silently changes which data it reads during the Quarto port | Phase 0 fingerprints are re-checked after every phase |
 | Package extraction diverges from what the sibling repos need | Keep all three `location_filtering` variants; extract only after arc-report is green |
-| Version drift between the package and three sites | Pin `aiqcreport` by tag in each workflow |
+| Version drift between the package and three sites | Pin `reportlib` by tag in each workflow |
 
 ## Open questions
 
