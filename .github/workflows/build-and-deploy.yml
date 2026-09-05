@@ -53,7 +53,12 @@ jobs:
       - name: Setup R
         uses: r-lib/actions/setup-r@v2
         with:
-          r-version: '4.4'
+          # 4.5, not 4.4: reportlib pulls ggpubr for theme_pubr(), and ggpubr
+          # reaches Deriv through rstatix -> car -> pbkrtest -> doBy. The current
+          # Deriv needs R >= 4.5, so on 4.4 pak cannot solve the tree at all --
+          # "Can't install dependency ggpubr" -- and the build dies before it
+          # renders anything.
+          r-version: '4.5'
 
       # 5. Cache and install R package dependencies
       # This action reads your DESCRIPTION file and installs all listed packages
