@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   when its outputs already exist and are newer than the source (`--force` to rebuild).
 - `scripts/dump_frames.R` fingerprints every data frame the pages load, with per-column digests,
   and `--check` compares against the committed baseline in `tests/fingerprints/`.
+- A **Source on GitHub** link in the navbar, pointing at this repo.
 
 ### Changed
 - The shared functions and templates moved to the new **`reportlib`** package. This repo now
@@ -37,6 +38,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - `qc_basic_info`, `summary_basic_info` and `var_basic_info` linked to a literal `parquet_url`
   rather than `{{parquet_url}}`, producing a broken link on every page. Pre-existing.
+- The navbar title linked to the AIQC portal instead of this site's home page, so nothing in the
+  menu bar led back to the index. Quarto folds the logo and the title into a single brand link,
+  which `logo-href` then claimed in full; Distill kept the two apart. The title is now an ordinary
+  nav item pointing at `index.qmd`, and the logo keeps the portal link and gains `AIQC` alt text
+  (it had none, and the image is white on transparent).
 
 ### Removed
 - Summary page sections "Profile level QC flags", "Location Filtering", "Duplicate Profiles

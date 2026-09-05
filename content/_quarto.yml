@@ -13,6 +13,19 @@ website:
   navbar:
     logo: images/logo.png
     logo-href: https://aiqc-hub.github.io/aiqc-report/
+    logo-alt: "AIQC"
+    # Quarto folds the site title into the same brand link as the logo, so with
+    # logo-href set the title pointed at the portal too and nothing led home.
+    # Distill kept them apart: logo -> portal, title -> index. Suppress the
+    # brand title and put it back as an ordinary left-hand nav item.
+    title: false
+    left:
+      - text: "Arctic Ocean"
+        href: index.qmd
+    tools:
+      - icon: github
+        href: https://github.com/AIQC-Hub/arc-report
+        text: "Source on GitHub"
     right:
       - text: "Profile Summary"
         menu:
