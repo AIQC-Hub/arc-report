@@ -142,7 +142,7 @@ in step.
 
 ```r
 install.packages(c("rmarkdown", "yaml"))
-remotes::install_github("AIQC-Hub/reportlib@v0.1.4")   # resolves reportlib's own deps
+remotes::install_github("AIQC-Hub/reportlib@v0.1.5")   # resolves reportlib's own deps
 ```
 
 `R CMD INSTALL` from a checkout does **not** resolve dependencies — it stops at the first missing
