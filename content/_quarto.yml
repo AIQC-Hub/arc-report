@@ -42,6 +42,21 @@ website:
             href: ar_gl_summary.qmd
           - text: "Summary (CORA)"
             href: ar_cora_summary.qmd
+      - text: "Pressure"
+        menu:
+          - text: "Pres (AR)"
+            href: ar_pres.qmd
+          - text: "Pres (GL)"
+            href: ar_gl_pres.qmd
+          - text: "Pres (CORA)"
+            href: ar_cora_pres.qmd
+          - text: "---"
+          - text: "Pres QC (AR)"
+            href: ar_pres_qc.qmd
+          - text: "Pres QC (GL)"
+            href: ar_gl_pres_qc.qmd
+          - text: "Pres QC (CORA)"
+            href: ar_cora_pres_qc.qmd
       - text: "Temperature"
         menu:
           - text: "Temp (AR)"

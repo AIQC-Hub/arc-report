@@ -24,7 +24,7 @@ Three datasets, each rendered as its own set of pages:
 content/            # Quarto project root
   _quarto.yml       # project type, navbar, output-dir: docs, shared html format
   index.qmd         # landing page
-  ar[_gl|_cora]_{summary,temp,psal,temp_qc,psal_qc}.qmd     # 15 pages + index
+  ar[_gl|_cora]_{summary,pres,temp,psal,pres_qc,temp_qc,psal_qc}.qmd   # 21 pages + index
   _func/            # knitr children, all local:
     common_site.Rmd   #   repo constants: release_url, rsc_dir
     common_ar.Rmd     #   per-dataset constants; loads the parquet into df_*
@@ -101,20 +101,19 @@ comes from the observation-level `longitude`/`latitude`.
 summaries (one row per platform × profile). Idempotent: it skips a dataset whose outputs already
 exist and are newer than the source; `--force` overrides.
 
-- `netcdf_<src>_summary.parquet` — 44 columns: `platform_code`, `profile_no`,
+- `netcdf_<src>_summary.parquet` — 62 columns: `platform_code`, `profile_no`,
   `profile_timestamp`, `time_qc`, `position_qc`, `longitude`, `latitude`,
-  `observation_no_count`, and per-variable `{temp,psal}_{count,na_count,non_na_count,mean,median,min,max}`
+  `observation_no_count`, and per-variable `{temp,psal,pres}_{count,na_count,non_na_count,mean,median,min,max}`
   plus flag counts `{var}_qc_{0..9,A}`.
-- `netcdf_<src>_summary_qc{1,4}_{temp,psal}.parquet` — 15 columns: the identity columns,
+- `netcdf_<src>_summary_qc{1,4}_{temp,psal,pres}.parquet` — 15 columns: the identity columns,
   `observation_no_count` and that variable's seven statistics, computed over only its QC 1 / QC 4
   observations. Loaded lazily by the packaged `load_qc_summary.Rmd`.
 
-Only what a page reads is carried. `pres_*` went with the pressure pages, and of the seven
-`observation_no_*` statistics only `_count` is used — the rest describe the numbering, not the
-data. That is 24 of the old 68 columns and about a fifth of each base file. The `_2_` that used to
-sit in these names was a leftover from the retired R pipeline; both it and the columns went in one
-step, so a checkout with old data on disk fails loudly on a missing file rather than quietly
-reading the wrong shape.
+Only what a page reads is carried: of the seven `observation_no_*` statistics only `_count` is
+kept, because the mean or median of an observation *number* within a profile describes the
+numbering rather than the data. `pres_*` was dropped with the pressure pages and came back with
+them — including its QC 1 / QC 4 subsets, which the old pipeline never built. The `_2_` that used
+to sit in these file names was a leftover from the retired R pipeline and is gone.
 
 Standard filtering chain applied on every page (`_template/location_filtering.Rmd`):
 `filter_profile_level_qc()` (time_qc == 1, position_qc ∈ {1, -128}) → `filer_locations()` →
@@ -140,6 +139,13 @@ installed `reportlib`, `content/_func/`, `config.yml` and the parquet, and clear
 `content/_freeze/` when any of them moves. Delete that directory to force a full re-render;
 `quarto render` on its own will not, so prefer `./build.sh`.
 
+**One false positive to expect from `--check`.** The `{var}_mean` columns are not bit-reproducible:
+arrow does not guarantee the order it returns rows within a profile, and floating-point summation
+is order-dependent, so a rebuild can flip the digest. Measured on `nrt_ar_gl`: 6 profiles of
+173,481 moved, by at most 5.6e-17 absolute (one ulp). Every other column, `median`/`min`/`max`
+included, is bit-identical across rebuilds. A `_mean` digest change on its own is noise; a `_mean`
+change alongside anything else is not.
+
 **RStudio's Build pane.** `.Rproj` uses `BuildType: Custom` pointing at `build.sh`, not
 `BuildType: Website`. RStudio only recognises a Quarto project when `_quarto.yml` sits beside the
 `.Rproj`; ours is in `content/`, so RStudio would fall back to `rmarkdown::render_site()` and fail
@@ -155,7 +161,7 @@ in step.
 
 ```r
 install.packages(c("rmarkdown", "yaml"))
-remotes::install_github("AIQC-Hub/reportlib@v0.1.8")   # resolves reportlib's own deps
+remotes::install_github("AIQC-Hub/reportlib@v0.1.10")   # resolves reportlib's own deps
 ```
 
 `R CMD INSTALL` from a checkout does **not** resolve dependencies — it stops at the first missing
@@ -194,6 +200,10 @@ instead, which is the better failure. Cut a new release from the new summaries b
 
 Five phases: remove 8 pages ✅ → switch to seastamp inputs ✅ → Distill-to-Quarto ✅ → extract the
 shared `reportlib` package ✅ → roll out to `bal-report` / `med-report` ✅.
+
+**The pressure pages came back.** Phase 1 removed them along with the NRT vs CORA pages; the six
+`*_pres*.qmd` are restored in all three sites, and `pres` is summarised again. The NRT vs CORA
+pages stay gone.
 
 **Parquet stays.** A parquet-to-SQLite move was planned and then reversed: SQLite came out ~8x
 larger (656 MB → 5.2 GB on `nrt_ar_ar`), past GitHub's 2 GiB release-asset cap. Do not

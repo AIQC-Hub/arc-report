@@ -16,6 +16,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   nothing that decides what a page shows lives there, so `build.sh` stamps the installed
   `reportlib`, `content/_func/`, `config.yml` and the parquet, and clears `content/_freeze/`
   when any of them moves. The freeze directory is git-ignored.
+- **The pressure pages are back**: `ar_pres.qmd`, `ar_gl_pres.qmd`, `ar_cora_pres.qmd` and their
+  `_qc` counterparts, with a **Pressure** menu restored to the navbar between Profile Summary
+  and Temperature. Each is its temperature page with the variable swapped, as it was before
+  the first migration phase removed them. 21 pages now.
 
 ### Changed
 - The shared functions and templates moved to the new **`reportlib`** package. This repo now
@@ -41,24 +45,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   in place. Reported figures are unchanged.
 - The QC tabs now open on **Good (QC == 1)**, followed by **Bad (QC == 4)** and then
   **All**, so a section leads with the QC-1 data rather than the unfiltered mixture.
-  The order lives in `reportlib`; the pin moves to v0.1.8.
+  The order lives in `reportlib`; the pin moves to v0.1.10.
 - The multi-panel figures on the Profile Summary pages became tabsets with one image per
   tab: the location maps, the longitude and latitude histograms, the four time spans, and
   the observation-count histograms and maps. Each panel is now its own PNG rather than one
   cell of a tall composite. The page call sites drop `plot_nrow`, and `plot_height` now
-  means the height of a single plot. Needs `reportlib` v0.1.8.
+  means the height of a single plot. Needs `reportlib` v0.1.10.
 - Page rendering no longer re-groups the summaries by profile. `netcdf_summary_1()` and the
   location filters were written for observation-level input, where a profile spans many rows;
   the summaries have had one row per platform x profile since `build_summaries.R`, so the
   grouping was a no-op costing 15s and 6s per call. A whole-site render drops from 482s to
   256s, with every figure byte-identical and every page identical apart from
-  the random htmlwidget element ids. Needs `reportlib` v0.1.8.
+  the random htmlwidget element ids. Needs `reportlib` v0.1.10.
 - The region maps use their own shape instead of the figure's. A degree of longitude is
   cos(latitude) of a degree of latitude, and stretching the panel to the device drew them
   the same length; the maps are now fixed at that ratio, with the unused part of the
   device left as margin. The Baltic and Mediterranean maps change most -- they were being
   stretched to a square figure. The colour bar is also 5cm wide now, which stops its
-  labels running together ("500 100015002000"). Needs `reportlib` v0.1.8.
+  labels running together ("500 100015002000"). Needs `reportlib` v0.1.10.
 - The summary parquet dropped the `_2_` from its name (`netcdf_<src>_summary*`, a leftover from
   the retired R pipeline) and lost the 24 columns nothing reads: every `pres_*` column, which
   went with the pressure pages, and the six `observation_no_*` statistics beyond `_count`.
@@ -66,6 +70,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   against the fingerprint baselines: 1,664 kept columns unchanged, 384 dropped, row and
   platform counts identical. Needs `reportlib` v0.1.8, and a new release of the data assets
   before CI can build.
+- The summaries carry `pres` again — the 18 `pres_*` columns in the base file (62 columns now)
+  and, new, its QC 1 / QC 4 subsets, which the pages' Good/Bad tabs read and the old pipeline
+  never built. All eight datasets were rebuilt from the observation-level parquet and checked
+  column by column: 1,652 existing columns unchanged, 288 new. Needs `reportlib` v0.1.10.
 
 ### Fixed
 - `qc_basic_info`, `summary_basic_info` and `var_basic_info` linked to a literal `parquet_url`
@@ -75,6 +83,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   which `logo-href` then claimed in full; Distill kept the two apart. The title is now an ordinary
   nav item pointing at `index.qmd`, and the logo keeps the portal link and gains `AIQC` alt text
   (it had none, and the image is white on transparent).
+- A QC tab with no observations behind it now says so instead of printing `Inf`, `NaN` and a
+  stray dash for its four headline numbers. `nrt_mo` has no QC 4 pressure observation at all,
+  which is how this surfaced. Needs `reportlib` v0.1.10.
 
 ### Removed
 - Summary page sections "Profile level QC flags", "Location Filtering", "Duplicate Profiles
