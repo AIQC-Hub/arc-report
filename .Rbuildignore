@@ -4,3 +4,4 @@ DESCRIPTION
 CHANGELOG.md
 README.md
 LICENSE
+^\.claude$

@@ -1,4 +1,0 @@
-```{r, t_location_filtering, echo = FALSE, message = FALSE, warning = FALSE}
-{{df_filtered}} <- {{df_name}} %>% filter_profile_level_qc() %>%
-  filer_locations() %>% exclude_locations()
-```
