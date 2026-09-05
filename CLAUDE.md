@@ -182,12 +182,12 @@ GitHub release `v0.1.0` into `./data`, sets up Quarto, renders, publishes `conte
 `setup-r-dependencies` reads `DESCRIPTION`, so the workflow's `packages:` block only pins the
 reportlib tag and does not restate the list.
 
-⚠️ **The release assets are stale.** They still hold the retired R-built summaries; the site now
-expects what `scripts/build_summaries.R` produces (15 files, 135 MB, named `netcdf_<src>_summary*`).
-CI downloads every asset with `--pattern '*'` and would previously have built green on the old
-files and published the old numbers; since the rename it will fail on the first missing file
-instead, which is the better failure. Cut a new release from the new summaries before pushing to
-`main`.
+**The data comes from a GitHub release.** CI downloads every asset of `v0.3.0` with
+`--pattern '*'` into `./data`: the 21 files `scripts/build_summaries.R` produces for this region,
+175 MB, named `netcdf_<src>_summary*`. Releases up to `v0.2.1` still carry the retired R-built
+summaries under the old `_2_` names and nothing reads them. When the summaries change, cut a new
+release and repoint the tag in `.github/workflows/build-and-deploy.yml` — the workflow pins one
+tag, so a new release is not picked up on its own.
 
 ## Repo conventions
 

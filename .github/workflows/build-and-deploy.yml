@@ -41,9 +41,9 @@ jobs:
         env:
           # The GITHUB_TOKEN is automatically created and provided by GitHub
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # Downloads all assets from release v0.1.0 into the 'data' directory.
+        # Downloads all assets from release v0.3.0 into the 'data' directory.
         # Your R scripts can now reliably use the path "./data/your-file.csv"
-        run: gh release download v0.1.0 --dir ./data --pattern '*'
+        run: gh release download v0.3.0 --dir ./data --pattern '*'
 
       # Optional: Verify that the files were downloaded correctly
       - name: List downloaded files
