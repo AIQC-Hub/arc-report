@@ -22,9 +22,9 @@ cfg  <- yaml::read_yaml(file.path(repo, "config.yml"))$data
 # `out` keeps the historical file naming, so _func/common_ar*.Rmd needs no change.
 build_summaries(
   datasets = list(
-    list(src = "nrt_ar_ar", out = "netcdf_nrt_ar_2_summary"),
-    list(src = "nrt_ar_gl", out = "netcdf_nrt_ar_gl_2_summary"),
-    list(src = "cora_ar",   out = "netcdf_cora_ar_2_summary")
+    list(src = "nrt_ar_ar", out = "netcdf_nrt_ar_summary"),
+    list(src = "nrt_ar_gl", out = "netcdf_nrt_ar_gl_summary"),
+    list(src = "cora_ar",   out = "netcdf_cora_ar_summary")
   ),
   src_dir    = Sys.getenv("SEASTAMP_DIR", unset = cfg$seastamp_dir),
   out_dir    = Sys.getenv("SUMMARY_DIR",  unset = cfg$summary_dir),

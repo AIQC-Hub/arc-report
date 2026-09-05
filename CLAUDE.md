@@ -101,14 +101,20 @@ comes from the observation-level `longitude`/`latitude`.
 summaries (one row per platform × profile). Idempotent: it skips a dataset whose outputs already
 exist and are newer than the source; `--force` overrides.
 
-- `netcdf_<src>_2_summary.parquet` — all variables. Key columns: `platform_code`, `profile_no`,
+- `netcdf_<src>_summary.parquet` — 44 columns: `platform_code`, `profile_no`,
   `profile_timestamp`, `time_qc`, `position_qc`, `longitude`, `latitude`,
-  `observation_no_*`, and per-variable `{pres,temp,psal}_{count,na_count,non_na_count,mean,median,min,max}`
+  `observation_no_count`, and per-variable `{temp,psal}_{count,na_count,non_na_count,mean,median,min,max}`
   plus flag counts `{var}_qc_{0..9,A}`.
-- `netcdf_<src>_2_summary_qc{1,4}_{temp,psal}.parquet` — 15 columns: the identity columns,
+- `netcdf_<src>_summary_qc{1,4}_{temp,psal}.parquet` — 15 columns: the identity columns,
   `observation_no_count` and that variable's seven statistics, computed over only its QC 1 / QC 4
-  observations. Loaded lazily by `_template/load_qc_summary.Rmd`. (No `pres` subsets — the
-  pressure pages are gone.)
+  observations. Loaded lazily by the packaged `load_qc_summary.Rmd`.
+
+Only what a page reads is carried. `pres_*` went with the pressure pages, and of the seven
+`observation_no_*` statistics only `_count` is used — the rest describe the numbering, not the
+data. That is 24 of the old 68 columns and about a fifth of each base file. The `_2_` that used to
+sit in these names was a leftover from the retired R pipeline; both it and the columns went in one
+step, so a checkout with old data on disk fails loudly on a missing file rather than quietly
+reading the wrong shape.
 
 Standard filtering chain applied on every page (`_template/location_filtering.Rmd`):
 `filter_profile_level_qc()` (time_qc == 1, position_qc ∈ {1, -128}) → `filer_locations()` →
@@ -149,7 +155,7 @@ in step.
 
 ```r
 install.packages(c("rmarkdown", "yaml"))
-remotes::install_github("AIQC-Hub/reportlib@v0.1.7")   # resolves reportlib's own deps
+remotes::install_github("AIQC-Hub/reportlib@v0.1.8")   # resolves reportlib's own deps
 ```
 
 `R CMD INSTALL` from a checkout does **not** resolve dependencies — it stops at the first missing
@@ -171,8 +177,11 @@ GitHub release `v0.1.0` into `./data`, sets up Quarto, renders, publishes `conte
 reportlib tag and does not restate the list.
 
 ⚠️ **The release assets are stale.** They still hold the retired R-built summaries; the site now
-expects what `scripts/build_summaries.R` produces (15 files, 150 MB). CI will build green but
-publish the old numbers until a new release is cut from the new summaries.
+expects what `scripts/build_summaries.R` produces (15 files, 135 MB, named `netcdf_<src>_summary*`).
+CI downloads every asset with `--pattern '*'` and would previously have built green on the old
+files and published the old numbers; since the rename it will fail on the first missing file
+instead, which is the better failure. Cut a new release from the new summaries before pushing to
+`main`.
 
 ## Repo conventions
 
