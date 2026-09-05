@@ -85,6 +85,11 @@ committed fingerprints.
   column by column: 1,652 existing columns unchanged, 288 new. Needs `reportlib` v0.1.10.
 
 ### Fixed
+- The table scroll bars added in the previous release survive the move to `reportlib`.
+  They lived in `content/_func/common.Rmd`, which this migration deletes, and the package was
+  branched from before that commit -- so wide `kable` and `DT` tables would have gone back to
+  clipping. `kbl_table()` and `create_dt_summary_tab()` carry them now; the pin moves to
+  `reportlib` v0.1.11.
 - `qc_basic_info`, `summary_basic_info` and `var_basic_info` linked to a literal `parquet_url`
   rather than `{{parquet_url}}`, producing a broken link on every page. Pre-existing.
 - The navbar title linked to the AIQC portal instead of this site's home page, so nothing in the
@@ -104,6 +109,10 @@ committed fingerprints.
 - NRT vs CORA pages (`ar_nrt_ar_vs_cora`, `ar_nrt_gl_vs_cora`)
 - Orphaned comparison machinery (`_func/comp.Rmd`, `_template/comp_*.Rmd`) and the
   unused `_template/var_distribution.Rmd`
+
+## [0.2.3] - 2025-11-18
+### Added
+- Scroll bars to all tables
 
 ## [0.2.2] - 2025-11-17
 ### Added

@@ -62,7 +62,7 @@ if [ -n "$rscript_bin" ]; then
       echo
       echo "Install them there:"
       echo "  install.packages(c(\"rmarkdown\", \"yaml\"))"
-      echo "  remotes::install_github(\"AIQC-Hub/reportlib@v0.1.10\")"
+      echo "  remotes::install_github(\"AIQC-Hub/reportlib@v0.1.11\")"
       echo
       echo "install_github resolves reportlib's own dependencies; R CMD INSTALL"
       echo "does not -- from a checkout run tools/install-deps.R first."
