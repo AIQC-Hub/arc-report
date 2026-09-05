@@ -19,7 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **The pressure pages are back**: `ar_pres.qmd`, `ar_gl_pres.qmd`, `ar_cora_pres.qmd` and their
   `_qc` counterparts, with a **Pressure** menu restored to the navbar between Profile Summary
   and Temperature. Each is its temperature page with the variable swapped, as it was before
-  the first migration phase removed them. 21 pages now.
+  the first migration phase removed them, and a **Pressure** group in the home page's Contents
+  list. 21 pages now.
 
 ### Changed
 - The shared functions and templates moved to the new **`reportlib`** package. This repo now
