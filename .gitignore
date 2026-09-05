@@ -7,4 +7,5 @@ _site
 .idea
 data
 content/docs/
+content/_freeze/
 tests/baseline-docs/

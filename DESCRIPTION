@@ -9,6 +9,6 @@ Imports:
     rmarkdown,
     yaml
 Remotes:
-    github::AIQC-Hub/reportlib@v0.1.5
+    github::AIQC-Hub/reportlib@v0.1.6
 Depends:
     reportlib

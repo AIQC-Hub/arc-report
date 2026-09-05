@@ -62,7 +62,7 @@ if [ -n "$rscript_bin" ]; then
       echo
       echo "Install them there:"
       echo "  install.packages(c(\"rmarkdown\", \"yaml\"))"
-      echo "  remotes::install_github(\"AIQC-Hub/reportlib@v0.1.5\")"
+      echo "  remotes::install_github(\"AIQC-Hub/reportlib@v0.1.6\")"
       echo
       echo "install_github resolves reportlib's own dependencies; R CMD INSTALL"
       echo "does not -- from a checkout run tools/install-deps.R first."
@@ -71,5 +71,30 @@ if [ -n "$rscript_bin" ]; then
   fi
 fi
 
+# content/_quarto.yml sets `freeze: auto`, so Quarto re-runs a page only when
+# that page's .qmd changes. Almost nothing that decides what a page shows lives
+# in the .qmd: the code is in reportlib, the region constants are in _func/, the
+# numbers are in the parquet. None of those are hashed by freeze, so a stale
+# freeze would quietly publish the previous build's figures.
+#
+# Stamp them here instead. Anything that moves invalidates the whole freeze,
+# which is the safe direction to be wrong in: the cost is one full render.
+stamp_file="content/_freeze/.build-stamp"
+stamp="$(
+  {
+    "${rscript_bin:-Rscript}" -e 'cat(find.package("reportlib"))' 2>/dev/null \
+      | xargs -r -I{} find {} -type f -printf '%p %s %T@\n' 2>/dev/null | sort
+    find content/_func -type f -exec md5sum {} + 2>/dev/null | sort
+    md5sum config.yml 2>/dev/null
+    find -L data -maxdepth 1 -name '*.parquet' -printf '%f %s %T@\n' 2>/dev/null | sort
+  } | md5sum | cut -d' ' -f1
+)"
+if [ -d content/_freeze ] && [ "$(cat "$stamp_file" 2>/dev/null)" != "$stamp" ]; then
+  echo "reportlib, _func/, config.yml or the data moved -- clearing content/_freeze"
+  rm -rf content/_freeze
+fi
+
 echo "Using $("$quarto_bin" --version) at $quarto_bin, R at ${rscript_bin:-unknown}"
-exec "$quarto_bin" render content "$@"
+"$quarto_bin" render content "$@"
+
+mkdir -p content/_freeze && printf '%s\n' "$stamp" > "$stamp_file"

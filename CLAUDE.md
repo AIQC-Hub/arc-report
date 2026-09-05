@@ -127,6 +127,13 @@ quarto render content/ar_temp.qmd                  # single page while iterating
 quarto preview content                             # live preview
 ```
 
+**Freeze.** `_quarto.yml` sets `execute: freeze: auto`, so a page is re-run only when its `.qmd`
+changes — a rebuild that touches nothing takes ~16s instead of ~5min. Quarto hashes the `.qmd`
+alone, and almost nothing that decides what a page shows lives there, so `build.sh` stamps the
+installed `reportlib`, `content/_func/`, `config.yml` and the parquet, and clears
+`content/_freeze/` when any of them moves. Delete that directory to force a full re-render;
+`quarto render` on its own will not, so prefer `./build.sh`.
+
 **RStudio's Build pane.** `.Rproj` uses `BuildType: Custom` pointing at `build.sh`, not
 `BuildType: Website`. RStudio only recognises a Quarto project when `_quarto.yml` sits beside the
 `.Rproj`; ours is in `content/`, so RStudio would fall back to `rmarkdown::render_site()` and fail
@@ -142,7 +149,7 @@ in step.
 
 ```r
 install.packages(c("rmarkdown", "yaml"))
-remotes::install_github("AIQC-Hub/reportlib@v0.1.5")   # resolves reportlib's own deps
+remotes::install_github("AIQC-Hub/reportlib@v0.1.6")   # resolves reportlib's own deps
 ```
 
 `R CMD INSTALL` from a checkout does **not** resolve dependencies — it stops at the first missing

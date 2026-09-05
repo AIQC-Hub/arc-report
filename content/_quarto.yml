@@ -1,3 +1,10 @@
+# Quarto reuses a page's computed output until the page changes, so a rebuild
+# after an unrelated edit costs seconds instead of minutes. What it hashes is
+# the .qmd alone, and almost all of our logic lives elsewhere -- reportlib and
+# _func/ -- so build.sh stamps those in and clears _freeze/ when they move.
+execute:
+  freeze: auto
+
 project:
   type: website
   output-dir: docs
