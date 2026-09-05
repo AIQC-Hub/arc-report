@@ -65,7 +65,7 @@ jobs:
           # push leaves this unresolvable.
           packages:
             any::rmarkdown
-            github::AIQC-Hub/reportlib@v0.1.3
+            github::AIQC-Hub/reportlib@v0.1.4
 
       # 6. Set up Quarto
       - name: Setup Quarto

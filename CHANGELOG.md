@@ -36,7 +36,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   in place. Reported figures are unchanged.
 - The QC tabs now open on **Good (QC == 1)**, followed by **Bad (QC == 4)** and then
   **All**, so a section leads with the QC-1 data rather than the unfiltered mixture.
-  The order lives in `reportlib`; the pin moves to v0.1.3.
+  The order lives in `reportlib`; the pin moves to v0.1.4.
+- The multi-panel figures on the Profile Summary pages became tabsets with one image per
+  tab: the location maps, the longitude and latitude histograms, the four time spans, and
+  the observation-count histograms and maps. Each panel is now its own PNG rather than one
+  cell of a tall composite. The page call sites drop `plot_nrow`, and `plot_height` now
+  means the height of a single plot. Needs `reportlib` v0.1.4.
 
 ### Fixed
 - `qc_basic_info`, `summary_basic_info` and `var_basic_info` linked to a literal `parquet_url`

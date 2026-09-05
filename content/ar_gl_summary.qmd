@@ -38,7 +38,7 @@ cat(res, sep = '\n')
 
 ## 3. Locations
 ```{r, locations, results = 'asis'}
-src <- knitr::knit_expand(template_path("summary_locations.Rmd"), plot_nrow=4, plot_height=20)
+src <- knitr::knit_expand(template_path("summary_locations.Rmd"), plot_height=5)
 res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
 ```
@@ -47,7 +47,7 @@ cat(res, sep = '\n')
 
 ## 4. Distribution of Profiles Over Time
 ```{r, distribution_time, results = 'asis'}
-src <- knitr::knit_expand(template_path("summary_distribution_time.Rmd"), plot_nrow=4, plot_height=20)
+src <- knitr::knit_expand(template_path("summary_distribution_time.Rmd"), plot_height=5)
 res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
 ```
@@ -56,7 +56,7 @@ cat(res, sep = '\n')
 
 ## 5. Observation Counts By Profile
 ```{r, observation_counts, results = 'asis'}
-src <- knitr::knit_expand(template_path("summary_observation_counts.Rmd"), plot_nrow=4, plot_height=20)
+src <- knitr::knit_expand(template_path("summary_observation_counts.Rmd"), plot_height=5)
 res <- knitr::knit_child(text = src, quiet = TRUE)
 cat(res, sep = '\n')
 ```
