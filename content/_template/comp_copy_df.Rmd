@@ -1,4 +1,0 @@
-```{r, include = FALSE}
-{{df_new_name}} <- {{df_orig_name}} %>% filter_profile_level_qc() %>%
-  filer_locations() %>% exclude_locations()
-```

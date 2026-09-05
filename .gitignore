@@ -6,4 +6,6 @@
 _site
 .idea
 data
-docs
+content/docs/
+content/_freeze/
+tests/baseline-docs/

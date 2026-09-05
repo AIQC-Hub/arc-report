@@ -1,4 +1,4 @@
-name: Build and Deploy Distill Site
+name: Build and Deploy Quarto Site
 
 # Run this workflow on pushes to the main branch
 on:
@@ -41,9 +41,9 @@ jobs:
         env:
           # The GITHUB_TOKEN is automatically created and provided by GitHub
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # Downloads all assets from release v0.1.0 into the 'data' directory.
+        # Downloads all assets from release v0.3.0 into the 'data' directory.
         # Your R scripts can now reliably use the path "./data/your-file.csv"
-        run: gh release download v0.1.0 --dir ./data --pattern '*'
+        run: gh release download v0.3.0 --dir ./data --pattern '*'
 
       # Optional: Verify that the files were downloaded correctly
       - name: List downloaded files
@@ -60,41 +60,33 @@ jobs:
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          # reportlib is pinned by tag so a change there cannot silently alter
+          # three published sites. The tag must exist on the repo: an untagged
+          # push leaves this unresolvable.
           packages:
             any::rmarkdown
-            any::distill
-            any::fontawesome
-            any::kableExtra
-            any::DT
-            any::htmltools
-            any::arrow
-            any::data.table
-            any::tidyverse
-            any::rlang
-            any::ggpubr
-            any::cowplot
-            any::scales
-            any::maps
-            any::xaringanExtra
-            any::hexbin
+            github::AIQC-Hub/reportlib@v0.1.11
 
-      # 6. Build the distill site using an R command
+      # 6. Set up Quarto
+      - name: Setup Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      # 7. Build the site
       - name: Build site
-        run: R -e 'rmarkdown::render_site(input = "content", encoding = "UTF-8")'
+        run: quarto render content
 
-      # 7. Configure GitHub Pages
+      # 8. Configure GitHub Pages
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      # 8. Upload the built site as an artifact
+      # 9. Upload the built site as an artifact
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # This MUST match the `output_dir` from your _site.yml
-          # The default for distill is '_site'. We use 'docs' here based on your description.
+          # Must match `project: output-dir` in content/_quarto.yml
           path: './content/docs'
 
-      # 9. Deploy the artifact to GitHub Pages
+      # 10. Deploy the artifact to GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

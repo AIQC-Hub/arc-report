@@ -1,9 +1,0 @@
-### NetCDF files
-  - **Dataset ID**: [{{netcdf}}]({{netcdf_doi}})
-  - **Duration**: history
-  - **Region**: {{region}} ({{region_code2}})
-  - **Category**: CT (CTD)
-
-### Parquet file
-
-  - **{{region_code2}} data**: [{{parquet}}](parquet_url)

@@ -1,0 +1,68 @@
+---
+title: "Profile Summary (CORA)"
+description: |
+  Profile summary report generated from a single Parquet file has been created from over 10000 NetCDF files from the CORA In-situ observations.
+---
+
+```{r include = FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+library(reportlib)
+r_func_path <- "./_func"
+r_funcs <- c("common_site.Rmd", "common_ar_cora.Rmd")
+```
+
+```{r, import, child=file.path(r_func_path, r_funcs)}
+```
+
+```{r, location_filtering1, include = FALSE}
+src <- knitr::knit_expand(template_path("location_filtering.Rmd"), df=df_name, df_filtered=df_filtered_name)
+res <- knitr::knit_child(text = src, quiet = TRUE)
+```
+
+## 1. Basic Information
+```{r, basic_info, results = 'asis'}
+res <- knitr::knit_expand(template_path("summary_basic_info.Rmd"))
+cat(res, sep = '\n')
+```
+
+---
+
+## 2. Descriptive Statistics of `r region_code1` CTD Data
+```{r, descriptive_stats, results = 'asis'}
+src <- knitr::knit_expand(template_path("summary_descriptive_stats.Rmd"), df=df_filtered_name)
+res <- knitr::knit_child(text = src, quiet = TRUE)
+cat(res, sep = '\n')
+```
+
+---
+
+## 3. Locations
+```{r, locations, results = 'asis'}
+src <- knitr::knit_expand(template_path("summary_locations.Rmd"), plot_height=5)
+res <- knitr::knit_child(text = src, quiet = TRUE)
+cat(res, sep = '\n')
+```
+
+---
+
+## 4. Distribution of Profiles Over Time
+```{r, distribution_time, results = 'asis'}
+src <- knitr::knit_expand(template_path("summary_distribution_time.Rmd"), plot_height=5)
+res <- knitr::knit_child(text = src, quiet = TRUE)
+cat(res, sep = '\n')
+```
+
+---
+
+## 5. Observation Counts By Profile
+```{r, observation_counts, results = 'asis'}
+src <- knitr::knit_expand(template_path("summary_observation_counts.Rmd"), plot_height=5)
+res <- knitr::knit_child(text = src, quiet = TRUE)
+cat(res, sep = '\n')
+```
+
+---
+
+```{r, cleanup, include = FALSE}
+rm(list = ls())
+```

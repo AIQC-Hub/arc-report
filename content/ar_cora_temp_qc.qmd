@@ -1,0 +1,66 @@
+---
+title: "Temperature QC (CORA)"
+description: |
+  Basic analysis of the temperature QC data from the CORA In-situ observations.
+---
+
+```{r include = FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+
+# Common functions
+library(reportlib)
+r_func_path <- "./_func"
+r_funcs <- c("common_site.Rmd", "common_ar_cora.Rmd")
+
+# Variables
+var <- "temp"
+qc_var <- "temp_qc"
+qc_var_name <- "Temperature QC flag"
+```
+
+```{r, import, child=file.path(r_func_path, r_funcs)}
+```
+
+```{r, location_filtering, include = FALSE}
+src <- knitr::knit_expand(template_path("location_filtering.Rmd"), df=df_name, df_filtered=df_filtered_name)
+res <- knitr::knit_child(text = src, quiet = TRUE)
+```
+
+## 1. Basic Information
+```{r, basic_info, results = 'asis'}
+res <- knitr::knit_expand(template_path("qc_basic_info.Rmd"))
+cat(res, sep = '\n')
+```
+
+---
+
+## 2. Summary Statistics
+```{r, summary_stats, results = 'asis'}
+src <- knitr::knit_expand(template_path("qc_summary_stats.Rmd"), df=df_filtered_name)
+res <- knitr::knit_child(text = src, quiet = TRUE)
+cat(res, sep = '\n')
+```
+
+---
+
+## 3. Distributions Over Time
+```{r, distributions, results = 'asis'}
+src <- knitr::knit_expand(template_path("qc_distribution.Rmd"), df=df_filtered_name)
+res <- knitr::knit_child(text = src, quiet = TRUE)
+cat(res, sep = '\n')
+```
+
+---
+
+## 4. Fraction of QC4 Flags per Profile
+```{r, fraction, results = 'asis'}
+src <- knitr::knit_expand(template_path("qc_qc4_proportion.Rmd"), df=df_filtered_name)
+res <- knitr::knit_child(text = src, quiet = TRUE)
+cat(res, sep = '\n')
+```
+
+---
+
+```{r, cleanup, include = FALSE}
+rm(list = ls())
+```

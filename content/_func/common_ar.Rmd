@@ -6,10 +6,10 @@ netcdf_doi <- "https://doi.org/10.48670/moi-00031"
 region <- "Arctic Ocean"
 region_code1 <- "AR"
 region_code2 <- "AR"
-parquet <- "netcdf_nrt_ar_2_summary.parquet"
+parquet <- "netcdf_nrt_ar_summary.parquet"
 parquet_url <- file.path(release_url, parquet)
-parquet_qc1 <- "netcdf_nrt_ar_2_summary_qc1.parquet"
-parquet_qc4 <- "netcdf_nrt_ar_2_summary_qc4.parquet"
+parquet_qc1 <- "netcdf_nrt_ar_summary_qc1.parquet"
+parquet_qc4 <- "netcdf_nrt_ar_summary_qc4.parquet"
 df_name <- "df_ar"
 df_qc1_name <- "df_ar_qc1"
 df_qc4_name <- "df_ar_qc4"
@@ -18,8 +18,6 @@ df_qc1_filtered_name <- "df_ar_qc1_filtered"
 df_qc4_filtered_name <- "df_ar_qc4_filtered"
 
 # Path
-#rsc_dir <- "../../data/nrt_ar"
-#rsc_dir2 <- "../data/nrt_ar"
 df_filtered_cache_name <- file.path(normalizePath(rsc_dir), paste0(df_filtered_name, ".rds"))
 
 # Data frame
