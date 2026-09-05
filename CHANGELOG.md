@@ -41,22 +41,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   in place. Reported figures are unchanged.
 - The QC tabs now open on **Good (QC == 1)**, followed by **Bad (QC == 4)** and then
   **All**, so a section leads with the QC-1 data rather than the unfiltered mixture.
-  The order lives in `reportlib`; the pin moves to v0.1.6.
+  The order lives in `reportlib`; the pin moves to v0.1.7.
 - The multi-panel figures on the Profile Summary pages became tabsets with one image per
   tab: the location maps, the longitude and latitude histograms, the four time spans, and
   the observation-count histograms and maps. Each panel is now its own PNG rather than one
   cell of a tall composite. The page call sites drop `plot_nrow`, and `plot_height` now
-  means the height of a single plot. Needs `reportlib` v0.1.6.
+  means the height of a single plot. Needs `reportlib` v0.1.7.
 - Page rendering no longer re-groups the summaries by profile. `netcdf_summary_1()` and the
   location filters were written for observation-level input, where a profile spans many rows;
   the summaries have had one row per platform x profile since `build_summaries.R`, so the
   grouping was a no-op costing 15s and 6s per call. A whole-site render drops from 482s to
   256s, with every figure byte-identical and every page identical apart from
-  the random htmlwidget element ids. Needs `reportlib` v0.1.6.
-- The region maps are binned at 300 hexagons across the range instead of 1000 (and 500 for
-  frames under 5000 rows). At 1920px wide that was about two pixels per hexagon, and it cost
-  2.4s per map against 1.0s. Only the maps change; every other figure is byte-identical.
-  Needs `reportlib` v0.1.6.
+  the random htmlwidget element ids. Needs `reportlib` v0.1.7.
+- The region maps use their own shape instead of the figure's. A degree of longitude is
+  cos(latitude) of a degree of latitude, and stretching the panel to the device drew them
+  the same length; the maps are now fixed at that ratio, with the unused part of the
+  device left as margin. The Baltic and Mediterranean maps change most -- they were being
+  stretched to a square figure. The colour bar is also 5cm wide now, which stops its
+  labels running together ("500 100015002000"). Needs `reportlib` v0.1.7.
 
 ### Fixed
 - `qc_basic_info`, `summary_basic_info` and `var_basic_info` linked to a literal `parquet_url`
