@@ -34,6 +34,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (`df_filtered_name`), matching every other summary page. It previously relied on a side
   effect of the removed "Profile level QC flags" section, which reassigned the source frame
   in place. Reported figures are unchanged.
+- The QC tabs now open on **Good (QC == 1)**, followed by **Bad (QC == 4)** and then
+  **All**, so a section leads with the QC-1 data rather than the unfiltered mixture.
+  The order lives in `reportlib`; the pin moves to v0.1.3.
 
 ### Fixed
 - `qc_basic_info`, `summary_basic_info` and `var_basic_info` linked to a literal `parquet_url`
