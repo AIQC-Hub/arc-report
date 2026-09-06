@@ -3,7 +3,12 @@
 # Repo-level constants. Everything dataset-specific lives in common_ar*.Rmd,
 # everything shared across the regional sites lives in the reportlib package.
 
-release_url <- "https://github.com/AIQC-Hub/arc-insitu-nrt-report/releases/download/v0.1.0"
+# The tag here must match the one .github/workflows/build-and-deploy.yml
+# downloads: this builds the page's download links, that fetches the data, and
+# a new data release has to be pointed at in both places. It was missed once --
+# the links kept the pre-rename repo and the pre-migration tag, so every one
+# 404'd while the site itself rendered clean.
+release_url <- "https://github.com/AIQC-Hub/arc-report/releases/download/v0.3.0"
 
 # Templates read `rsc_dir2` by name via knit_expand, so both names are kept.
 rsc_dir <- aiqc_data_dir()
