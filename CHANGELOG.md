@@ -5,6 +5,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-09-06
+### Fixed
+- Every **data download link on every page was a 404**. `release_url` in
+  `content/_func/common_site.Rmd` still named the pre-rename repository and the pre-migration
+  release -- `arc-insitu-nrt-report/releases/download/v0.1.0` -- while the file names
+  appended to it are the current ones, so the URLs missed on repository, tag and file name
+  at once. It now points at `arc-report/releases/download/v0.3.0`, and every link a page
+  emits was checked to resolve. Nothing in the render flagged this: the pages built clean and
+  the link check only covered local paths. A comment in `common_site.Rmd` now ties this tag to
+  the one `.github/workflows/build-and-deploy.yml` downloads -- a new data release has to be
+  pointed at in both places.
+
+
 ## [0.3.1] - 2026-09-06
 ### Fixed
 - CI builds on R 4.5 instead of 4.4. `reportlib` pulls `ggpubr` for `theme_pubr()`, and
